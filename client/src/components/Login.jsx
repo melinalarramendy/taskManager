@@ -37,7 +37,7 @@ const Login = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await axios.post('http://localhost:3001/login', {
+      const response = await axios.post('http://localhost:3003/login', {
         email: formData.email,
         password: formData.password
       });

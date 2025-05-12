@@ -19,7 +19,7 @@ const ForgotPassword = () => {
         setLoading(true);
 
         try {
-            await axios.post('http://localhost:3001/forgot-password', { email });
+            await axios.post('http://localhost:3003/forgot-password', { email });
             setSuccess('Token enviado a tu correo. Revisa tu bandeja de entrada.');
             setStep(2);
             setError('');

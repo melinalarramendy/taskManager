@@ -42,7 +42,7 @@ const Signup = () => {
     setIsSubmitting(true);
     try {
       console.log('Enviando datos:', formData);
-      const response = await axios.post('http://localhost:3001/register', {
+      const response = await axios.post('http://localhost:3003/register', {
         name: formData.name,
         email: formData.email,
         password: formData.password
