@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { Form, Button, Alert, Container, Row, Col } from 'react-bootstrap';
+import { Form, Button, Alert, Container, Row, Col, Card } from 'react-bootstrap';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { FiUserPlus } from 'react-icons/fi';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
+    confirmPassword: ''
   });
+  
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -20,125 +23,189 @@ const Signup = () => {
       ...formData,
       [name]: value
     });
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: null
+      });
+    }
   };
 
   const validateForm = () => {
     const newErrors = {};
+    
     if (!formData.name.trim()) newErrors.name = 'Nombre es requerido';
-    if (!/^\S+@\S+\.\S+$/.test(formData.email)) newErrors.email = 'Email inválido';
-    if (formData.password.length < 6) newErrors.password = 'Mínimo 6 caracteres';
-  
+    else if (formData.name.length < 3) newErrors.name = 'Mínimo 3 caracteres';
+    
+    if (!formData.email.trim()) newErrors.email = 'Email es requerido';
+    else if (!/^\S+@\S+\.\S+$/.test(formData.email)) newErrors.email = 'Email inválido';
+    
+    if (!formData.password) newErrors.password = 'Contraseña es requerida';
+    else if (formData.password.length < 6) newErrors.password = 'Mínimo 6 caracteres';
+    
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Las contraseñas no coinciden';
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Formulario enviado');
-    if (!validateForm()) {
-      console.log('Validación fallida', errors);
-      return;
-    }
+    if (!validateForm()) return;
+
     setIsSubmitting(true);
+    setServerError('');
+
     try {
-      console.log('Enviando datos:', formData);
       const response = await axios.post('http://localhost:3003/register', {
         name: formData.name,
         email: formData.email,
         password: formData.password
       }, {
         headers: {
-            'Content-Type': 'application/json'
+          'Content-Type': 'application/json'
         }
       });
-      
-      localStorage.setItem('token', response.data.token);
-      navigate('/login');
+
+      if (response.data && response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        
+        navigate('/login');
+      } else {
+        throw new Error('Respuesta inesperada del servidor');
+      }
+
     } catch (err) {
-      console.error('Error en la solicitud:', err);
-      setServerError(err.response?.data?.message || 'Error al registrar');
+      let errorMessage = 'Error al registrar usuario';
+      
+      if (err.response) {
+        if (err.response.status === 400) {
+          errorMessage = err.response.data.message || 'Datos inválidos';
+        } else if (err.response.status === 409) {
+          errorMessage = 'El email ya está registrado';
+        } else {
+          errorMessage = `Error del servidor: ${err.response.status}`;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setServerError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Container className="mt-5">
-      <Row className="justify-content-center">
-        <Col md={6} lg={4}>
-          <div className="p-4 border rounded-3 shadow-sm bg-white">
-            <h2 className="text-center mb-4">Registrate</h2>
-            
-            {serverError && <Alert variant="danger">{serverError}</Alert>}
-
-            <Form onSubmit={handleSubmit}>
-              <Form.Group className="mb-3">
-                <Form.Label>Nombre completo</Form.Label>
-                <Form.Control
-                  type="text"
-                  id="name" 
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  isInvalid={!!errors.name}
-                  placeholder="Ej: Juan Pérez"
-                  autoComplete="name"
-                />
-                <Form.Control.Feedback type="invalid">
-                  {errors.name}
-                </Form.Control.Feedback>
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Email</Form.Label>
-                <Form.Control
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  isInvalid={!!errors.email}
-                  placeholder="ejemplo@mail.com"
-                  autoComplete="email"
-                />
-                <Form.Control.Feedback type="invalid">
-                  {errors.email}
-                </Form.Control.Feedback>
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Contraseña</Form.Label>
-                <Form.Control
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  isInvalid={!!errors.password}
-                  placeholder="Mínimo 6 caracteres"
-                  autoComplete="new-password"
-                />
-                <Form.Control.Feedback type="invalid">
-                  {errors.password}
-                </Form.Control.Feedback>
-              </Form.Group>
-
-              <Button 
-                variant="primary" 
-                type="submit" 
-                className="w-100 mb-3"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Registrando...' : 'Crear cuenta'}
-              </Button>
-
-              <div className="text-center">
-                <small className="text-muted">
-                  ¿Ya tienes cuenta? <a href="/login">Inicia sesión</a>
-                </small>
+    <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
+      <Row className="w-100">
+        <Col md={{ span: 6, offset: 3 }} lg={{ span: 4, offset: 4 }}>
+          <Card className="shadow-sm border-0">
+            <Card.Body className="p-4">
+              <div className="text-center mb-4">
+                <FiUserPlus size={32} className="text-primary mb-2" />
+                <h2>Crear Cuenta</h2>
+                <p className="text-muted">Regístrate para comenzar</p>
               </div>
-            </Form>
-          </div>
+
+              {serverError && (
+                <Alert variant="danger" dismissible onClose={() => setServerError('')}>
+                  {serverError}
+                </Alert>
+              )}
+
+              <Form onSubmit={handleSubmit} noValidate>
+                <Form.Group className="mb-3">
+                  <Form.Label>Nombre Completo</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    isInvalid={!!errors.name}
+                    placeholder="Ej: Juan Pérez"
+                    required
+                    minLength="3"
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.name}
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Email</Form.Label>
+                  <Form.Control
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    isInvalid={!!errors.email}
+                    placeholder="tucorreo@ejemplo.com"
+                    required
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.email}
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Contraseña</Form.Label>
+                  <Form.Control
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    isInvalid={!!errors.password}
+                    placeholder="Mínimo 6 caracteres"
+                    required
+                    minLength="6"
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.password}
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <Form.Group className="mb-4">
+                  <Form.Label>Confirmar Contraseña</Form.Label>
+                  <Form.Control
+                    type="password"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    isInvalid={!!errors.confirmPassword}
+                    placeholder="Repite tu contraseña"
+                    required
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.confirmPassword}
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <Button 
+                  variant="primary" 
+                  type="submit" 
+                  className="w-100 mb-3 py-2"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Registrando...
+                    </>
+                  ) : 'Crear Cuenta'}
+                </Button>
+
+                <div className="text-center mt-3">
+                  <span className="text-muted">¿Ya tienes cuenta? </span>
+                  <Link to="/login" className="text-decoration-none">
+                    Inicia Sesión
+                  </Link>
+                </div>
+              </Form>
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
     </Container>
