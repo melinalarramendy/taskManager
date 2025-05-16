@@ -1,12 +1,245 @@
-import React from 'react'
-import { useLogout } from './Logout';
+import React, { useState, useEffect } from 'react';
+import { Container, Row, Col, Spinner, Alert } from 'react-bootstrap';
+import Swal from 'sweetalert2';
+import WorkspaceSidebar from './WorkspaceSidebar';
+import BoardOverview from './BoardOverview';
+import axios from 'axios';
 
 const Dashboard = () => {
-    const logout = useLogout();
+  const [workspaces, setWorkspaces] = useState([]);
+  const [sharedWorkspaces, setSharedWorkspaces] = useState([]);
+  const [boards, setBoards] = useState([]);
+  const [activeWorkspace, setActiveWorkspace] = useState(null);
+  const [recentBoards, setRecentBoards] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [newBoardTitle, setNewBoardTitle] = useState('');
+  const [newBoardDescription, setNewBoardDescription] = useState('');
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editBoardId, setEditBoardId] = useState(null);
+  const [editBoardTitle, setEditBoardTitle] = useState('');
+  const [editBoardDescription, setEditBoardDescription] = useState('');
+
+  const openModal = () => {
+    setNewBoardTitle('');
+    setNewBoardDescription('');
+    setShowModal(true);
+  };
+
+  const closeModal = () => setShowModal(false);
+
+  const openEditModal = (board) => {
+    setEditBoardId(board._id);
+    setEditBoardTitle(board.title);
+    setEditBoardDescription(board.description);
+    setEditModalOpen(true);
+  };
+
+  const closeEditModal = () => setEditModalOpen(false);
+
+  const handleCreateNewBoard = async (title, description) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await axios.post('/api/boards', {
+        title,
+        description
+      }, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.success) {
+        setBoards(prev => [response.data.board, ...prev]);
+        setRecentBoards(prev => [response.data.board, ...prev.slice(0, 1)]);
+        closeModal();
+        await Swal.fire('¡Tablero creado!', 'El tablero se creó correctamente.', 'success');
+      }
+    } catch (error) {
+      console.error('Error completo:', error);
+      await Swal.fire('Error', error.response?.data?.message || 'No se pudo crear el tablero. Inténtalo de nuevo.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteBoard = async (id) => {
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: '¡Esta acción eliminará el tablero!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await axios.delete(`/api/boards/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      setBoards(prev => prev.filter(board => board._id !== id));
+      Swal.fire('Eliminado', 'El tablero ha sido eliminado.', 'success');
+    } catch (error) {
+      Swal.fire('Error', 'Error al eliminar el tablero', 'error');
+    }
+  };
+
+  const handleEditBoard = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.put(`/api/boards/${editBoardId}`, {
+        title: editBoardTitle,
+        description: editBoardDescription
+      }, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      setBoards(prev =>
+        prev.map(board =>
+          board._id === editBoardId
+            ? { ...board, title: editBoardTitle, description: editBoardDescription }
+            : board
+        )
+      );
+      setRecentBoards(prev =>
+        prev.map(board =>
+          board._id === editBoardId
+            ? { ...board, title: editBoardTitle, description: editBoardDescription }
+            : board
+        )
+      );
+      closeEditModal();
+      await Swal.fire('¡Editado!', 'El tablero fue actualizado.', 'success');
+    } catch (error) {
+      await Swal.fire('Error', 'No se pudo editar el tablero.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('/api/workspaces/boards', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        const boardsData = response.data?.boards || [];
+        const workspaceData = response.data?.workspace || {};
+
+        setBoards(boardsData);
+        setRecentBoards(boardsData.slice(0, 2));
+
+        setActiveWorkspace(workspaceData.id || null);
+
+      } catch (error) {
+        console.error('Error fetching boards:', error);
+        Swal.fire('Error', 'Error al cargar el tablero', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  useEffect(() => {
+    const fetchBoards = async () => {
+      if (!activeWorkspace) return;
+
+      try {
+        setLoading(true);
+        const response = await axios.get(`/api/workspaces/${activeWorkspace}/boards`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        const boardsData = response.data?.boards || [];
+        setBoards(boardsData);
+        setRecentBoards(boardsData.slice(0, 2));
+
+      } catch (error) {
+        console.error('Error fetching boards:', error);
+        Swal.fire('Error', 'Error al cargar el tablero', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBoards();
+  }, [activeWorkspace]);
+
+  if (loading) {
+    return (
+      <div className="text-center mt-5">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </Spinner>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container className="mt-3">
+        <Alert variant="danger">{error}</Alert>
+      </Container>
+    );
+  }
+
   return (
-    <button onClick={logout}>Cerrar Sesión</button>
-  )
-}
+    <Container fluid>
+      <Row>
+        <Col md={3} className="p-3">
+          <WorkspaceSidebar
+            workspaces={workspaces || []}
+            sharedWorkspaces={sharedWorkspaces || []}
+            activeWorkspace={activeWorkspace}
+            onWorkspaceSelect={setActiveWorkspace}
+          />
+        </Col>
+        <Col md={9} className="p-3">
+          <BoardOverview
+            boards={boards}
+            recentBoards={recentBoards}
+            onCreateNewBoard={handleCreateNewBoard}
+            onDeleteBoard={handleDeleteBoard}
+            showModal={showModal}
+            openModal={openModal}
+            closeModal={closeModal}
+            newBoardTitle={newBoardTitle}
+            setNewBoardTitle={setNewBoardTitle}
+            newBoardDescription={newBoardDescription}
+            setNewBoardDescription={setNewBoardDescription}
+            onEditBoard={openEditModal}
+            editModalOpen={editModalOpen}
+            closeEditModal={closeEditModal}
+            editBoardTitle={editBoardTitle}
+            setEditBoardTitle={setEditBoardTitle}
+            editBoardDescription={editBoardDescription}
+            setEditBoardDescription={setEditBoardDescription}
+            handleEditBoard={handleEditBoard}
+          />
+        </Col>
+      </Row>
+    </Container>
+  );
+};
 
 export default Dashboard;
 
