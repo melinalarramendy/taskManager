@@ -1,4 +1,4 @@
-import { Card, Button, Table, Badge, Modal, Form } from 'react-bootstrap';
+import { Card, Button, Badge, Modal, Form, Row, Col } from 'react-bootstrap';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 
 const BoardOverview = ({
@@ -20,6 +20,9 @@ const BoardOverview = ({
   setEditBoardTitle,
   editBoardDescription,
   setEditBoardDescription,
+  editBoardImage,
+  setEditBoardImage,
+  resizeImage,
   handleEditBoard
 }) => {
   return (
@@ -49,6 +52,25 @@ const BoardOverview = ({
                   onChange={e => setNewBoardDescription(e.target.value)}
                 />
               </Form.Group>
+              <Form.Group>
+                <Form.Label>Imagen de fondo</Form.Label>
+                <Form.Control
+                  type="file"
+                  accept="image/*"
+                  onChange={async e => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const resized = await resizeImage(file, 800, 600);
+                      setEditBoardImage(resized);
+                    }
+                  }}
+                />
+                {editBoardImage && (
+                  <div className="mt-2">
+                    <img src={editBoardImage} alt="preview" style={{ width: "100%", borderRadius: 8, maxHeight: 120, objectFit: "cover" }} />
+                  </div>
+                )}
+              </Form.Group>
             </Form>
           </Modal.Body>
           <Modal.Footer>
@@ -67,28 +89,42 @@ const BoardOverview = ({
       </Card.Header>
       <Card.Body>
         {boards.length > 0 ? (
-          <Table striped bordered hover>
-            <thead>
-              <tr>
-                <th>Título</th>
-                <th>Descripción</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {boards.map(board => (
-                <tr key={board._id}>
-                  <td>{board.title}</td>
-                  <td>{board.description}</td>
-                  <td>
-                    <Badge bg="info">{board.status || 'Activo'}</Badge>
-                  </td>
-                  <td>
+          <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+            {boards.map(board => (
+              <Col key={board._id}>
+                <Card
+                  className="h-100 shadow rounded-4 border-0"
+                  style={{
+                    background: board.coverImage
+                      ? `url(${board.coverImage}) center/cover no-repeat`
+                      : "#f8fafc",
+                    transition: "box-shadow 0.2s",
+                    color: board.coverImage ? "#fff" : undefined,
+                    position: "relative"
+                  }}
+                >
+                  {board.coverImage && (
+                    <div style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: "rgba(0,0,0,0.25)",
+                      borderRadius: "1rem",
+                      zIndex: 1
+                    }} />
+                  )}
+                  <Card.Body style={{ position: "relative", zIndex: 2 }}>
+                    <div className="d-flex justify-content-between align-items-start">
+                      <Card.Title className="mb-2">{board.title}</Card.Title>
+                      <Badge bg="info" className="ms-2">{board.status || 'Activo'}</Badge>
+                    </div>
+                    <Card.Text className="text-muted" style={{ minHeight: 60 }}>
+                      {board.description || <span className="fst-italic text-secondary">Sin descripción</span>}
+                    </Card.Text>
+                  </Card.Body>
+                  <Card.Footer className="bg-white border-0 d-flex justify-content-end gap-2" style={{ position: "relative", zIndex: 2 }}>
                     <Button
                       variant="outline-primary"
                       size="sm"
-                      className="me-2"
                       title="Editar"
                       onClick={() => onEditBoard(board)}
                     >
@@ -102,11 +138,11 @@ const BoardOverview = ({
                     >
                       <FiTrash2 />
                     </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+                  </Card.Footer>
+                </Card>
+              </Col>
+            ))}
+          </Row>
         ) : (
           <p>No hay tableros creados aún</p>
         )}
@@ -132,6 +168,25 @@ const BoardOverview = ({
                   value={editBoardDescription}
                   onChange={e => setEditBoardDescription(e.target.value)}
                 />
+              </Form.Group>
+              <Form.Group>
+                <Form.Label>Imagen de fondo</Form.Label>
+                <Form.Control
+                  type="file"
+                  accept="image/*"
+                  onChange={async e => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const resized = await resizeImage(file, 800, 600);
+                      setEditBoardImage(resized);
+                    }
+                  }}
+                />
+                {editBoardImage && (
+                  <div className="mt-2">
+                    <img src={editBoardImage} alt="preview" style={{ width: "100%", borderRadius: 8, maxHeight: 120, objectFit: "cover" }} />
+                  </div>
+                )}
               </Form.Group>
             </Form>
           </Modal.Body>

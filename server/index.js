@@ -265,7 +265,8 @@ app.get('/user/workspaces', authenticateToken, async (req, res) => {
       await user.save();
     }
 
-    const boards = await Board.find({ workspace: user.defaultWorkspace._id });
+    const boards = await Board.find({ workspace: user.defaultWorkspace._id })
+  .select('title description completed updatedAt labels coverImage');
 
     res.json({
       workspace: user.defaultWorkspace,
@@ -281,7 +282,7 @@ app.get('/workspaces/:workspaceId/boards', authenticateToken, async (req, res) =
   try {
     const { workspaceId } = req.params;
     const boards = await Board.find({ workspace: workspaceId })
-      .select('title description completed updatedAt labels')
+      .select('title description completed updatedAt labels coverImage')
       .sort({ updatedAt: -1 });
 
     const workspace = await Workspace.findById(workspaceId);
@@ -314,7 +315,7 @@ app.get('/workspaces/boards', authenticateToken, async (req, res) => {
     }
 
     const boards = await Board.find({ workspace: user.defaultWorkspace._id })
-      .select('title description completed updatedAt labels')
+      .select('title description completed updatedAt labels coverImage')
       .sort({ updatedAt: -1 });
 
     res.status(200).json({
@@ -354,6 +355,7 @@ app.post('/boards', authenticateToken, async (req, res) => {
     const board = new Board({
       title: req.body.title || 'Nuevo tablero',
       description: req.body.description || '',
+      coverImage: req.body.coverImage || '',
       workspace: user.defaultWorkspace,
       createdBy: user._id,
       owner: user._id
@@ -373,12 +375,13 @@ app.post('/boards', authenticateToken, async (req, res) => {
       { new: true }
     );
 
-    res.status(201).json({ 
+    res.status(201).json({
       success: true,
       board: {
         _id: board._id,
         title: board.title,
         description: board.description,
+        coverImage: board.coverImage,
         workspace: user.defaultWorkspace
       }
     });
@@ -394,10 +397,10 @@ app.post('/boards', authenticateToken, async (req, res) => {
 
 app.put('/boards/:id', authenticateToken, async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { title, description, coverImage } = req.body;
     const board = await Board.findByIdAndUpdate(
       req.params.id,
-      { title, description },
+      { title, description, coverImage },
       { new: true }
     );
     if (!board) {

@@ -22,6 +22,8 @@ const Dashboard = () => {
   const [editBoardId, setEditBoardId] = useState(null);
   const [editBoardTitle, setEditBoardTitle] = useState('');
   const [editBoardDescription, setEditBoardDescription] = useState('');
+  const [editBoardImage, setEditBoardImage] = useState('');
+
   const [user, setUser] = useState(null);
 
   const navigate = useNavigate();
@@ -38,19 +40,21 @@ const Dashboard = () => {
     setEditBoardId(board._id);
     setEditBoardTitle(board.title);
     setEditBoardDescription(board.description);
+    setEditBoardImage(board.coverImage || '');
     setEditModalOpen(true);
   };
 
   const closeEditModal = () => setEditModalOpen(false);
 
-  const handleCreateNewBoard = async (title, description) => {
+  const handleCreateNewBoard = async (title, description, coverImage) => {
     try {
-      setLoading(true);
+
       setError(null);
 
       const response = await axios.post('/api/boards', {
         title,
-        description
+        description,
+        coverImage
       }, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -67,8 +71,6 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error completo:', error);
       await Swal.fire('Error', error.response?.data?.message || 'No se pudo crear el tablero. Inténtalo de nuevo.', 'error');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -103,10 +105,11 @@ const Dashboard = () => {
 
   const handleEditBoard = async () => {
     try {
-      setLoading(true);
+
       const response = await axios.put(`/api/boards/${editBoardId}`, {
         title: editBoardTitle,
-        description: editBoardDescription
+        description: editBoardDescription,
+        coverImage: editBoardImage
       }, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -117,14 +120,14 @@ const Dashboard = () => {
       setBoards(prev =>
         prev.map(board =>
           board._id === editBoardId
-            ? { ...board, title: editBoardTitle, description: editBoardDescription }
+            ? { ...board, title: editBoardTitle, description: editBoardDescription, coverImage: editBoardImage }
             : board
         )
       );
       setRecentBoards(prev =>
         prev.map(board =>
           board._id === editBoardId
-            ? { ...board, title: editBoardTitle, description: editBoardDescription }
+            ? { ...board, title: editBoardTitle, description: editBoardDescription, coverImage: editBoardImage }
             : board
         )
       );
@@ -132,15 +135,40 @@ const Dashboard = () => {
       await Swal.fire('¡Editado!', 'El tablero fue actualizado.', 'success');
     } catch (error) {
       await Swal.fire('Error', 'No se pudo editar el tablero.', 'error');
-    } finally {
-      setLoading(false);
     }
   };
+
+  function resizeImage(file, maxWidth = 800, maxHeight = 600) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = event => {
+        const img = new window.Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxWidth || height > maxHeight) {
+            const scale = Math.min(maxWidth / width, maxHeight / height);
+            width = width * scale;
+            height = height * scale;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.onerror = reject;
+        img.src = event.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        setLoading(true);
+
         const response = await axios.get('/api/workspaces/boards', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -173,7 +201,7 @@ const Dashboard = () => {
       if (!activeWorkspace) return;
 
       try {
-        setLoading(true);
+
         const response = await axios.get(`/api/workspaces/${activeWorkspace}/boards`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -246,6 +274,9 @@ const Dashboard = () => {
               editBoardDescription={editBoardDescription}
               setEditBoardDescription={setEditBoardDescription}
               handleEditBoard={handleEditBoard}
+              editBoardImage={editBoardImage}
+              setEditBoardImage={setEditBoardImage}
+              resizeImage={resizeImage}
             />
           </Col>
         </Row>
