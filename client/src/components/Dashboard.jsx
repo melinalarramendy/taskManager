@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import Swal from 'sweetalert2';
-import WorkspaceSidebar from './WorkspaceSidebar';
+import { useNavigate } from 'react-router-dom';
+import WorkspaceNavbar from './WorkspaceNavbar';
 import BoardOverview from './BoardOverview';
 import axios from 'axios';
 
@@ -11,6 +12,7 @@ const Dashboard = () => {
   const [boards, setBoards] = useState([]);
   const [activeWorkspace, setActiveWorkspace] = useState(null);
   const [recentBoards, setRecentBoards] = useState([]);
+  const [starredBoards, setStarredBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -20,6 +22,9 @@ const Dashboard = () => {
   const [editBoardId, setEditBoardId] = useState(null);
   const [editBoardTitle, setEditBoardTitle] = useState('');
   const [editBoardDescription, setEditBoardDescription] = useState('');
+  const [user, setUser] = useState(null);
+
+  const navigate = useNavigate();
 
   const openModal = () => {
     setNewBoardTitle('');
@@ -65,6 +70,10 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBoardSelect = (boardId) => {
+    navigate(`/boards/${boardId}`);
   };
 
   const handleDeleteBoard = async (id) => {
@@ -138,6 +147,8 @@ const Dashboard = () => {
           }
         });
 
+        setUser(response.data?.user || null);
+
         const boardsData = response.data?.boards || [];
         const workspaceData = response.data?.workspace || {};
 
@@ -203,41 +214,43 @@ const Dashboard = () => {
   }
 
   return (
-    <Container fluid>
-      <Row>
-        <Col md={3} className="p-3">
-          <WorkspaceSidebar
-            workspaces={workspaces || []}
-            sharedWorkspaces={sharedWorkspaces || []}
-            activeWorkspace={activeWorkspace}
-            onWorkspaceSelect={setActiveWorkspace}
-          />
-        </Col>
-        <Col md={9} className="p-3">
-          <BoardOverview
-            boards={boards}
-            recentBoards={recentBoards}
-            onCreateNewBoard={handleCreateNewBoard}
-            onDeleteBoard={handleDeleteBoard}
-            showModal={showModal}
-            openModal={openModal}
-            closeModal={closeModal}
-            newBoardTitle={newBoardTitle}
-            setNewBoardTitle={setNewBoardTitle}
-            newBoardDescription={newBoardDescription}
-            setNewBoardDescription={setNewBoardDescription}
-            onEditBoard={openEditModal}
-            editModalOpen={editModalOpen}
-            closeEditModal={closeEditModal}
-            editBoardTitle={editBoardTitle}
-            setEditBoardTitle={setEditBoardTitle}
-            editBoardDescription={editBoardDescription}
-            setEditBoardDescription={setEditBoardDescription}
-            handleEditBoard={handleEditBoard}
-          />
-        </Col>
-      </Row>
-    </Container>
+    <>
+      <WorkspaceNavbar
+        boards={boards}
+        recentBoards={recentBoards}
+        starredBoards={starredBoards}
+        ownerName={user?.name}
+        onBoardSelect={handleBoardSelect}
+      />
+
+      <Container fluid className="pt-3">
+        <Row>
+          <Col md={12} className="p-3">
+            <BoardOverview
+              boards={boards}
+              recentBoards={recentBoards}
+              onCreateNewBoard={handleCreateNewBoard}
+              onDeleteBoard={handleDeleteBoard}
+              showModal={showModal}
+              openModal={openModal}
+              closeModal={closeModal}
+              newBoardTitle={newBoardTitle}
+              setNewBoardTitle={setNewBoardTitle}
+              newBoardDescription={newBoardDescription}
+              setNewBoardDescription={setNewBoardDescription}
+              onEditBoard={openEditModal}
+              editModalOpen={editModalOpen}
+              closeEditModal={closeEditModal}
+              editBoardTitle={editBoardTitle}
+              setEditBoardTitle={setEditBoardTitle}
+              editBoardDescription={editBoardDescription}
+              setEditBoardDescription={setEditBoardDescription}
+              handleEditBoard={handleEditBoard}
+            />
+          </Col>
+        </Row>
+      </Container>
+    </>
   );
 };
 
