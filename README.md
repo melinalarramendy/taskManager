@@ -26,3 +26,4 @@ Aplicación de gestión de tareas construida con el stack MERN (MongoDB, Express
 - JSON Web Tokens (JWT)
 - BcryptJS
 - Nodemailer
+- Mailtrap (pruebas de mail)
