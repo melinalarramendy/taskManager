@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Form, Button, Alert, Container, Row, Col, Card } from 'react-bootstrap';
+import { Form, Button, Container, Row, Col, Card } from 'react-bootstrap';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiUserPlus } from 'react-icons/fi';
+import Swal from 'sweetalert2';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -11,9 +12,8 @@ const Signup = () => {
     password: '',
     confirmPassword: ''
   });
-  
+
   const [errors, setErrors] = useState({});
-  const [serverError, setServerError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -31,24 +31,38 @@ const Signup = () => {
     }
   };
 
+  const validateEmail = (email) => {
+    return /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(email);
+  };
+
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.name.trim()) newErrors.name = 'Nombre es requerido';
     else if (formData.name.length < 3) newErrors.name = 'Mínimo 3 caracteres';
-    
+
     if (!formData.email.trim()) newErrors.email = 'Email es requerido';
-    else if (!/^\S+@\S+\.\S+$/.test(formData.email)) newErrors.email = 'Email inválido';
-    
+    else if (!validateEmail(formData.email)) newErrors.email = 'Email inválido';
+
     if (!formData.password) newErrors.password = 'Contraseña es requerida';
     else if (formData.password.length < 6) newErrors.password = 'Mínimo 6 caracteres';
-    
+
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Las contraseñas no coinciden';
     }
-    
+
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+
+    if (Object.keys(newErrors).length > 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Validación',
+        text: Object.values(newErrors).join('\n'),
+        confirmButtonColor: '#3085d6'
+      });
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e) => {
@@ -56,7 +70,6 @@ const Signup = () => {
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-    setServerError('');
 
     try {
       const response = await axios.post('http://localhost:3003/register', {
@@ -71,7 +84,16 @@ const Signup = () => {
 
       if (response.data && response.data.token) {
         localStorage.setItem('token', response.data.token);
-        
+
+        await Swal.fire({
+          icon: 'success',
+          title: '¡Registro exitoso!',
+          text: 'Tu cuenta ha sido creada correctamente.',
+          confirmButtonColor: '#3085d6',
+          timer: 1800,
+          showConfirmButton: false
+        });
+
         navigate('/login');
       } else {
         throw new Error('Respuesta inesperada del servidor');
@@ -79,7 +101,7 @@ const Signup = () => {
 
     } catch (err) {
       let errorMessage = 'Error al registrar usuario';
-      
+
       if (err.response) {
         if (err.response.status === 400) {
           errorMessage = err.response.data.message || 'Datos inválidos';
@@ -91,8 +113,13 @@ const Signup = () => {
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
-      setServerError(errorMessage);
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: errorMessage,
+        confirmButtonColor: '#d33'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -109,12 +136,6 @@ const Signup = () => {
                 <h2>Crear Cuenta</h2>
                 <p className="text-muted">Regístrate para comenzar</p>
               </div>
-
-              {serverError && (
-                <Alert variant="danger" dismissible onClose={() => setServerError('')}>
-                  {serverError}
-                </Alert>
-              )}
 
               <Form onSubmit={handleSubmit} noValidate>
                 <Form.Group className="mb-3">
@@ -183,9 +204,9 @@ const Signup = () => {
                   </Form.Control.Feedback>
                 </Form.Group>
 
-                <Button 
-                  variant="primary" 
-                  type="submit" 
+                <Button
+                  variant="primary"
+                  type="submit"
                   className="w-100 mb-3 py-2"
                   disabled={isSubmitting}
                 >

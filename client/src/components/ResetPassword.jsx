@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Form, Button, Alert, Container, Row, Col, Card } from 'react-bootstrap';
+import { Form, Button, Container, Row, Col, Card } from 'react-bootstrap';
 import axios from 'axios';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 const ResetPassword = () => {
     const [searchParams] = useSearchParams();
@@ -11,8 +12,6 @@ const ResetPassword = () => {
         confirmPassword: ''
     });
     const [errors, setErrors] = useState({});
-    const [serverError, setServerError] = useState('');
-    const [serverSuccess, setServerSuccess] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
 
@@ -37,13 +36,17 @@ const ResetPassword = () => {
         e.preventDefault();
         if (!validateForm()) return;
         if (!token) {
-            setServerError('Token inválido o faltante');
+            await Swal.fire({
+                icon: 'error',
+                title: 'Token inválido o faltante',
+                confirmButtonColor: '#d33'
+            });
             return;
         }
 
         setIsSubmitting(true);
         try {
-            const response = await axios.post('http://localhost:3003/resetpassword', {
+            const response = await axios.post('http://localhost:3003/reset-password', {
                 token,
                 newPassword: formData.newPassword,
                 confirmPassword: formData.confirmPassword
@@ -54,26 +57,60 @@ const ResetPassword = () => {
             });
 
             if (response.data.success) {
-                setServerSuccess(response.data.message);
-                setTimeout(() => navigate('/login'), 2000);
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Contraseña actualizada',
+                    text: response.data.message,
+                    confirmButtonColor: '#3085d6',
+                    timer: 1800,
+                    showConfirmButton: false
+                });
+                setTimeout(() => navigate('/login'), 1800);
             } else {
-                setServerError(response.data.message || 'Error desconocido');
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.data.message || 'Error desconocido',
+                    confirmButtonColor: '#d33'
+                });
             }
         } catch (err) {
-            console.error('Error completo:', err);
-
             if (err.response) {
                 if (err.response.data.errorType === 'invalid_token') {
-                    setServerError('El token es inválido o ha expirado');
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Token inválido o ha expirado',
+                        text: err.response.data.message || 'Solicita un nuevo token.',
+                        confirmButtonColor: '#d33'
+                    });
                 } else if (err.response.data.errorType === 'password_mismatch') {
-                    setServerError('Las contraseñas no coinciden');
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Las contraseñas no coinciden',
+                        confirmButtonColor: '#d33'
+                    });
                 } else {
-                    setServerError(err.response.data.message || 'Error del servidor');
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: err.response.data.message || 'Error del servidor',
+                        confirmButtonColor: '#d33'
+                    });
                 }
             } else if (err.request) {
-                setServerError('No se recibió respuesta del servidor');
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se recibió respuesta del servidor',
+                    confirmButtonColor: '#d33'
+                });
             } else {
-                setServerError('Error al configurar la solicitud');
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al configurar la solicitud',
+                    confirmButtonColor: '#d33'
+                });
             }
         } finally {
             setIsSubmitting(false);
@@ -87,10 +124,6 @@ const ResetPassword = () => {
                     <Card className="shadow-sm">
                         <Card.Body>
                             <h2 className="text-center mb-4">Restablecer Contraseña</h2>
-
-                            {serverError && <Alert variant="danger">{serverError}</Alert>}
-                            {serverSuccess && <Alert variant="success">{serverSuccess}</Alert>}
-
                             <Form onSubmit={handleSubmit}>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Nueva Contraseña</Form.Label>

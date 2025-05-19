@@ -3,6 +3,7 @@ import { Form, Button, Alert, Container, Row, Col, Card } from 'react-bootstrap'
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { FiLogIn } from 'react-icons/fi';
+import Swal from 'sweetalert2';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -28,16 +29,29 @@ const Login = () => {
     }
   };
 
+  const validateEmail = (email) => {
+    return /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(email);
+  };
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.email.trim()) newErrors.email = 'Email es requerido';
-    else if (!/^\S+@\S+\.\S+$/.test(formData.email)) newErrors.email = 'Email inválido';
-    
+    else if (!validateEmail(formData.email)) newErrors.email = 'Email inválido';
+
     if (!formData.password) newErrors.password = 'Contraseña es requerida';
     else if (formData.password.length < 6) newErrors.password = 'Mínimo 6 caracteres';
-    
+
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Validación',
+        text: Object.values(newErrors).join('\n'),
+        confirmButtonColor: '#3085d6'
+      });
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e) => {
@@ -45,7 +59,6 @@ const Login = () => {
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-    setServerError('');
 
     try {
       const response = await axios.post('http://localhost:3003/login', {
@@ -70,6 +83,15 @@ const Login = () => {
 
       axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
 
+      await Swal.fire({
+        icon: 'success',
+        title: '¡Bienvenido!',
+        text: 'Inicio de sesión exitoso',
+        confirmButtonColor: '#3085d6',
+        timer: 1500,
+        showConfirmButton: false
+      });
+
       navigate('/dashboard', { replace: true });
 
     } catch (err) {
@@ -88,8 +110,13 @@ const Login = () => {
         errorMessage = err.message;
       }
 
-      setServerError(errorMessage);
-
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: errorMessage,
+        confirmButtonColor: '#d33'
+      });
+      
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       delete axios.defaults.headers.common['Authorization'];

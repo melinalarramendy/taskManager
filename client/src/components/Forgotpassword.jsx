@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Form, Button, Alert, Container, Row, Col } from 'react-bootstrap';
+import { Form, Button, Container, Row, Col } from 'react-bootstrap';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');
@@ -9,8 +10,6 @@ const ForgotPassword = () => {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [step, setStep] = useState(1);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
@@ -20,11 +19,20 @@ const ForgotPassword = () => {
 
         try {
             await axios.post('http://localhost:3003/forgot-password', { email });
-            setSuccess('Token enviado a tu correo. Revisa tu bandeja de entrada.');
+            await Swal.fire({
+                icon: 'success',
+                title: 'Token enviado',
+                text: 'Revisa tu correo electrónico.',
+                confirmButtonColor: '#3085d6'
+            });
             setStep(2);
-            setError('');
         } catch (err) {
-            setError(err.response?.data?.message || 'Error al enviar el token');
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: err.response?.data?.message || 'Error al enviar el token',
+                confirmButtonColor: '#d33'
+            });
         } finally {
             setLoading(false);
         }
@@ -34,19 +42,29 @@ const ForgotPassword = () => {
         e.preventDefault();
 
         if (newPassword !== confirmPassword) {
-            return setError('Las contraseñas no coinciden');
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Las contraseñas no coinciden',
+                confirmButtonColor: '#d33'
+            });
+            return;
         }
 
         if (newPassword.length < 6) {
-            return setError('La contraseña debe tener al menos 6 caracteres');
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'La contraseña debe tener al menos 6 caracteres',
+                confirmButtonColor: '#d33'
+            });
+            return;
         }
 
         setLoading(true);
-        setError('');
-        setSuccess('');
 
         try {
-            const response = await axios.post('http://localhost:3001/resetpassword', {
+            const response = await axios.post('http://localhost:3003/reset-password', {
                 token: token.trim(),
                 newPassword: newPassword.trim(),
                 confirmPassword: confirmPassword.trim()
@@ -55,25 +73,32 @@ const ForgotPassword = () => {
                     'Content-Type': 'application/json'
                 }
             });
-            console.log('Respuesta del servidor:', response.data);
 
             if (response.data.success) {
-                setSuccess('Contraseña actualizada correctamente. Redirigiendo...');
-                setTimeout(() => navigate('/login'), 2000);
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Contraseña actualizada',
+                    text: 'Redirigiendo al login...',
+                    confirmButtonColor: '#3085d6',
+                    timer: 1800,
+                    showConfirmButton: false
+                });
+                setTimeout(() => navigate('/login'), 1800);
             } else {
-                setError(response.data.message || 'Error al actualizar la contraseña');
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.data.message || 'Error al actualizar la contraseña',
+                    confirmButtonColor: '#d33'
+                });
             }
         } catch (err) {
-            console.error('Error completo:', err.response?.data || err);
-
-            if (err.response?.data?.errorType === 'invalid_token') {
-                setError('El token es inválido o ha expirado. Solicita uno nuevo.');
-                setStep(1);
-            } else if (err.response?.data?.errorType === 'password_mismatch') {
-                setError('Las contraseñas no coinciden');
-            } else {
-                setError(err.response?.data?.message || 'Error al conectar con el servidor');
-            }
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: err.response?.data?.message || 'Error al enviar el token',
+                confirmButtonColor: '#d33'
+            });
         } finally {
             setLoading(false);
         }
@@ -85,9 +110,6 @@ const ForgotPassword = () => {
                 <Col md={6}>
                     <div className="p-4 border rounded shadow-sm bg-white">
                         <h2 className="text-center mb-4">Recuperar Contraseña</h2>
-
-                        {error && <Alert variant="danger">{error}</Alert>}
-                        {success && <Alert variant="success">{success}</Alert>}
 
                         {step === 1 ? (
                             <Form onSubmit={handleRequestToken}>
