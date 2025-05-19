@@ -59,6 +59,10 @@ const BoardSchema = new mongoose.Schema({
     }
   }],
   coverImage: String,
+  favorite: {
+    type: Boolean,
+    default: false
+  },
   labels: [{
     name: String,
     color: String
@@ -76,7 +80,7 @@ const BoardSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   }
-}, { 
+}, {
   timestamps: true,
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
@@ -88,7 +92,7 @@ BoardSchema.index({ owner: 1 });
 BoardSchema.index({ 'members.user': 1 });
 
 
-BoardSchema.pre('remove', async function(next) {
+BoardSchema.pre('remove', async function (next) {
 
   next();
 });

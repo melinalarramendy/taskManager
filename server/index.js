@@ -266,7 +266,7 @@ app.get('/user/workspaces', authenticateToken, async (req, res) => {
     }
 
     const boards = await Board.find({ workspace: user.defaultWorkspace._id })
-  .select('title description completed updatedAt labels coverImage');
+      .select('title description completed updatedAt labels coverImage favorite')
 
     res.json({
       workspace: user.defaultWorkspace,
@@ -282,7 +282,7 @@ app.get('/workspaces/:workspaceId/boards', authenticateToken, async (req, res) =
   try {
     const { workspaceId } = req.params;
     const boards = await Board.find({ workspace: workspaceId })
-      .select('title description completed updatedAt labels coverImage')
+      .select('title description completed updatedAt labels coverImage favorite')
       .sort({ updatedAt: -1 });
 
     const workspace = await Workspace.findById(workspaceId);
@@ -315,11 +315,11 @@ app.get('/workspaces/boards', authenticateToken, async (req, res) => {
     }
 
     const boards = await Board.find({ workspace: user.defaultWorkspace._id })
-      .select('title description completed updatedAt labels coverImage')
+      .select('title description completed updatedAt labels coverImage favorite')
       .sort({ updatedAt: -1 });
 
     res.status(200).json({
-      boards: boards || [], // Asegurar array
+      boards: boards || [],
       workspace: {
         id: user.defaultWorkspace._id,
         name: user.defaultWorkspace.name
@@ -330,7 +330,7 @@ app.get('/workspaces/boards', authenticateToken, async (req, res) => {
     console.error('Error:', error);
     res.status(500).json({
       message: 'Error al obtener tableros',
-      boards: [] // Asegurar array incluso en errores
+      boards: []
     });
   }
 });
@@ -358,7 +358,8 @@ app.post('/boards', authenticateToken, async (req, res) => {
       coverImage: req.body.coverImage || '',
       workspace: user.defaultWorkspace,
       createdBy: user._id,
-      owner: user._id
+      owner: user._id,
+      favorite: false
     });
 
     await board.save();
@@ -382,7 +383,8 @@ app.post('/boards', authenticateToken, async (req, res) => {
         title: board.title,
         description: board.description,
         coverImage: board.coverImage,
-        workspace: user.defaultWorkspace
+        workspace: user.defaultWorkspace,
+        favorite: board.favorite,
       }
     });
 
@@ -409,6 +411,22 @@ app.put('/boards/:id', authenticateToken, async (req, res) => {
     res.json({ success: true, board });
   } catch (error) {
     res.status(500).json({ message: 'Error al editar el tablero' });
+  }
+});
+
+app.put('/boards/:id/favorite', authenticateToken, async (req, res) => {
+  try {
+    const board = await Board.findByIdAndUpdate(
+      req.params.id,
+      { favorite: req.body.favorite },
+      { new: true }
+    );
+    if (!board) {
+      return res.status(404).json({ message: 'Tablero no encontrado' });
+    }
+    res.json({ success: true, board });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al actualizar favorito' });
   }
 });
 

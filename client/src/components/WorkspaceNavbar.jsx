@@ -18,6 +18,8 @@ const WorkspaceNavbar = ({
   const [search, setSearch] = useState('');
   const logout = useLogout();
 
+  
+
   const filteredBoards = boards.filter(board =>
     board.title.toLowerCase().includes(search.toLowerCase())
   );

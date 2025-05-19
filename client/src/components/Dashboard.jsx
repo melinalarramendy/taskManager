@@ -12,12 +12,12 @@ const Dashboard = () => {
   const [boards, setBoards] = useState([]);
   const [activeWorkspace, setActiveWorkspace] = useState(null);
   const [recentBoards, setRecentBoards] = useState([]);
-  const [starredBoards, setStarredBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [newBoardTitle, setNewBoardTitle] = useState('');
   const [newBoardDescription, setNewBoardDescription] = useState('');
+  const [newBoardImage, setNewBoardImage] = useState('');
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editBoardId, setEditBoardId] = useState(null);
   const [editBoardTitle, setEditBoardTitle] = useState('');
@@ -25,6 +25,7 @@ const Dashboard = () => {
   const [editBoardImage, setEditBoardImage] = useState('');
 
   const [user, setUser] = useState(null);
+
 
   const navigate = useNavigate();
 
@@ -138,6 +139,30 @@ const Dashboard = () => {
     }
   };
 
+  const handleToggleFavorite = async (boardId, newValue) => {
+    try {
+      await axios.put(`/api/boards/${boardId}/favorite`, { favorite: newValue }, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      setBoards(prev =>
+        prev.map(b => b._id === boardId ? { ...b, favorite: newValue } : b)
+      );
+      await Swal.fire({
+        icon: 'success',
+        title: newValue ? 'Agregado a destacados' : 'Quitado de destacados',
+        showConfirmButton: false,
+        timer: 1200
+      });
+    } catch (error) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo actualizar el favorito',
+        confirmButtonColor: '#d33'
+      });
+    }
+  };
+
   function resizeImage(file, maxWidth = 800, maxHeight = 600) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -241,6 +266,8 @@ const Dashboard = () => {
     );
   }
 
+  const starredBoards = boards.filter(board => board.favorite);
+
   return (
     <>
       <WorkspaceNavbar
@@ -257,6 +284,7 @@ const Dashboard = () => {
             <BoardOverview
               boards={boards}
               recentBoards={recentBoards}
+              starredBoards={starredBoards}
               onCreateNewBoard={handleCreateNewBoard}
               onDeleteBoard={handleDeleteBoard}
               showModal={showModal}
@@ -266,6 +294,8 @@ const Dashboard = () => {
               setNewBoardTitle={setNewBoardTitle}
               newBoardDescription={newBoardDescription}
               setNewBoardDescription={setNewBoardDescription}
+              newBoardImage={newBoardImage}
+              setNewBoardImage={setNewBoardImage}
               onEditBoard={openEditModal}
               editModalOpen={editModalOpen}
               closeEditModal={closeEditModal}
@@ -276,6 +306,7 @@ const Dashboard = () => {
               handleEditBoard={handleEditBoard}
               editBoardImage={editBoardImage}
               setEditBoardImage={setEditBoardImage}
+              onToggleFavorite={handleToggleFavorite}
               resizeImage={resizeImage}
             />
           </Col>

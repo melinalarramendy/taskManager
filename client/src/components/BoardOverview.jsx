@@ -1,5 +1,6 @@
 import { Card, Button, Badge, Modal, Form, Row, Col } from 'react-bootstrap';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FaStar } from 'react-icons/fa';
 
 const BoardOverview = ({
   boards = [],
@@ -12,7 +13,9 @@ const BoardOverview = ({
   newBoardTitle,
   setNewBoardTitle,
   newBoardDescription,
+  newBoardImage,
   setNewBoardDescription,
+  setNewBoardImage,
   onEditBoard,
   editModalOpen,
   closeEditModal,
@@ -23,6 +26,7 @@ const BoardOverview = ({
   editBoardImage,
   setEditBoardImage,
   resizeImage,
+  onToggleFavorite,
   handleEditBoard
 }) => {
   return (
@@ -60,8 +64,8 @@ const BoardOverview = ({
                   onChange={async e => {
                     const file = e.target.files[0];
                     if (file) {
-                      const resized = await resizeImage(file, 800, 600);
-                      setEditBoardImage(resized);
+                      const base64 = await resizeImage(file);
+                      setNewBoardImage(base64);
                     }
                   }}
                 />
@@ -79,7 +83,7 @@ const BoardOverview = ({
             </Button>
             <Button
               variant="primary"
-              onClick={() => onCreateNewBoard(newBoardTitle, newBoardDescription)}
+              onClick={() => onCreateNewBoard(newBoardTitle, newBoardDescription, newBoardImage)}
               disabled={!newBoardTitle}
             >
               Crear
@@ -122,6 +126,15 @@ const BoardOverview = ({
                     </Card.Text>
                   </Card.Body>
                   <Card.Footer className="bg-white border-0 d-flex justify-content-end gap-2" style={{ position: "relative", zIndex: 2 }}>
+                    <Button
+                      variant="outline-warning"
+                      size="sm"
+                      title={board.favorite ? "Quitar de destacados" : "Marcar como destacado"}
+                      onClick={() => onToggleFavorite(board._id, !board.favorite)}
+                      style={{ color: board.favorite ? '#FFD700' : '#bbb' }}
+                    >
+                      {board.favorite ? <FaStar /> : <FaStar />}
+                    </Button>
                     <Button
                       variant="outline-primary"
                       size="sm"
