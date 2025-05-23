@@ -6,6 +6,7 @@ import ResetPassword from './components/ResetPassword'
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './components/Dashboard'
 import Error404 from './components/Error404'
+import KanbanBoard from './components/KanbanBoard';
 import { Routes, Route } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './App.css'
@@ -27,6 +28,15 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+
+      <Route 
+          path="/boards/:id" 
+          element={
+            <ProtectedRoute>
+              <KanbanBoard />
             </ProtectedRoute>
           } 
         />

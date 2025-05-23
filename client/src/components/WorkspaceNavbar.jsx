@@ -18,40 +18,61 @@ const WorkspaceNavbar = ({
   const [search, setSearch] = useState('');
   const logout = useLogout();
 
-  
+
 
   const filteredBoards = boards.filter(board =>
     board.title.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    
+
     <>
-      <Navbar bg="light" expand="lg" className="shadow-sm px-3" style={{ minHeight: 64 }}>
-        <Navbar.Brand className="fw-bold" style={{ letterSpacing: 1 }}>TaskManager</Navbar.Brand>
-        <Nav className="me-auto">
-          <Nav.Link onClick={() => setShowBoards(true)}>Tableros</Nav.Link>
-          <Nav.Link onClick={() => setShowRecent(true)}>Tableros recientes</Nav.Link>
-          <Nav.Link onClick={() => setShowStarred(true)}>Tableros marcados</Nav.Link>
-        </Nav>
-        <InputGroup className="me-3" style={{ maxWidth: 250 }}>
-          <Form.Control
-            placeholder="Buscar..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </InputGroup>
-        <Dropdown align="end">
-          <Dropdown.Toggle variant="light" id="dropdown-user" className="rounded-circle border-0 p-0" style={{ width: 40, height: 40 }}>
-            <div className="d-flex align-items-center justify-content-center bg-primary text-white rounded-circle" style={{ width: 40, height: 40, fontSize: 22 }}>
-              <FiUser />
-            </div>
-          </Dropdown.Toggle>
-          <Dropdown.Menu>
-            <Dropdown.Header>{ownerName}</Dropdown.Header>
-            <Dropdown.Item onClick={logout}>Cerrar sesión</Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown>
+      <Navbar
+        bg="light"
+        expand="lg"
+        collapseOnSelect
+        className="shadow-sm px-3"
+        style={{ minHeight: 64 }}
+      >
+        <Navbar.Brand className="fw-bold" style={{ letterSpacing: 1 }}>
+          TaskManager
+        </Navbar.Brand>
+        <Navbar.Toggle aria-controls="navbar-content" />
+        <Navbar.Collapse id="navbar-content">
+          <Nav className="me-auto">
+            <Nav.Link onClick={() => setShowBoards(true)}>Tableros</Nav.Link>
+            <Nav.Link onClick={() => setShowRecent(true)}>Tableros recientes</Nav.Link>
+            <Nav.Link onClick={() => setShowStarred(true)}>Tableros marcados</Nav.Link>
+          </Nav>
+          <div className="d-flex align-items-center gap-2">
+            <InputGroup className="my-2 my-lg-0" style={{ maxWidth: 250 }}>
+              <Form.Control
+                placeholder="Buscar..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </InputGroup>
+            <Dropdown align="end">
+              <Dropdown.Toggle
+                variant="light"
+                id="dropdown-user"
+                className="rounded-circle border-0 p-0"
+                style={{ width: 40, height: 40 }}
+              >
+                <div
+                  className="d-flex align-items-center justify-content-center bg-primary text-white rounded-circle"
+                  style={{ width: 40, height: 40, fontSize: 22 }}
+                >
+                  <FiUser />
+                </div>
+              </Dropdown.Toggle>
+              <Dropdown.Menu>
+                <Dropdown.Header>{ownerName}</Dropdown.Header>
+                <Dropdown.Item onClick={logout}>Cerrar sesión</Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          </div>
+        </Navbar.Collapse>
       </Navbar>
 
       {/* Modal Tableros */}

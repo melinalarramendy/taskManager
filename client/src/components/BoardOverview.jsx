@@ -1,6 +1,7 @@
 import { Card, Button, Badge, Modal, Form, Row, Col } from 'react-bootstrap';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { FaStar } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const BoardOverview = ({
   boards = [],
@@ -29,6 +30,9 @@ const BoardOverview = ({
   onToggleFavorite,
   handleEditBoard
 }) => {
+
+  const navigate = useNavigate();
+
   return (
     <Card>
       <Card.Header className="d-flex justify-content-between align-items-center">
@@ -104,7 +108,12 @@ const BoardOverview = ({
                       : "#f8fafc",
                     transition: "box-shadow 0.2s",
                     color: board.coverImage ? "#fff" : undefined,
-                    position: "relative"
+                    position: "relative",
+                    cursor: "pointer"
+                  }}
+                  onClick={() => {
+                    console.log(board);
+                    navigate(`/boards/${board._id}`);
                   }}
                 >
                   {board.coverImage && (

@@ -335,6 +335,18 @@ app.get('/workspaces/boards', authenticateToken, async (req, res) => {
   }
 });
 
+app.get('/boards/:id', authenticateToken, async (req, res) => {
+  try {
+    const board = await Board.findById(req.params.id);
+    if (!board) {
+      return res.status(404).json({ message: 'Tablero no encontrado' });
+    }
+    res.status(200).json(board);
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener el tablero' });
+  }
+});
+
 app.post('/boards', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
