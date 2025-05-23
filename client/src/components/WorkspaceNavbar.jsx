@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navbar, Nav, Button, Modal, ListGroup, Form, InputGroup, Dropdown } from 'react-bootstrap';
 import { FiUser } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import { useLogout } from './Logout';
 
 const WorkspaceNavbar = ({
@@ -18,7 +19,7 @@ const WorkspaceNavbar = ({
   const [search, setSearch] = useState('');
   const logout = useLogout();
 
-
+  const navigate = useNavigate();
 
   const filteredBoards = boards.filter(board =>
     board.title.toLowerCase().includes(search.toLowerCase())
@@ -34,7 +35,11 @@ const WorkspaceNavbar = ({
         className="shadow-sm px-3"
         style={{ minHeight: 64 }}
       >
-        <Navbar.Brand className="fw-bold" style={{ letterSpacing: 1 }}>
+        <Navbar.Brand
+          className="fw-bold"
+          style={{ letterSpacing: 1, cursor: 'pointer' }}
+          onClick={() => navigate('/dashboard')}
+        >
           TaskManager
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="navbar-content" />

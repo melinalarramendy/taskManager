@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, Form, Row, Col, InputGroup } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import WorkspaceNavbar from './WorkspaceNavbar';
 
 const initialColumns = [
     { id: 1, name: 'Por hacer', tasks: [] },
@@ -15,25 +16,50 @@ const KanbanBoard = () => {
     const [newColumnName, setNewColumnName] = useState('');
     const [boardName, setBoardName] = useState('');
     const [loading, setLoading] = useState(true);
+    const [boards, setBoards] = useState([]);
+    const [recentBoards, setRecentBoards] = useState([]);
+    const [starredBoards, setStarredBoards] = useState([]);
+    const [ownerName, setOwnerName] = useState('');
 
     useEffect(() => {
-    const fetchBoardName = async () => {
-        setLoading(true);
-        try {
-            const response = await axios.get(`/api/boards/${id}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            setBoardName(response.data.title);
-        } catch (error) {
-            setBoardName('Tablero no encontrado');
-        } finally {
-            setLoading(false);
-        }
-    };
-    fetchBoardName();
-}, [id]);
+        const fetchBoardName = async () => {
+            setLoading(true);
+            try {
+                const response = await axios.get(`/api/boards/${id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                setBoardName(response.data.title);
+            } catch (error) {
+                setBoardName('Tablero no encontrado');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchBoardName();
+    }, [id]);
+
+    useEffect(() => {
+        const fetchBoards = async () => {
+            try {
+                const response = await axios.get('/api/workspaces/boards', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                setBoards(response.data.boards || []);
+                setOwnerName(response.data.workspace?.name || '');
+                setRecentBoards((response.data.boards || []).slice(-4).reverse());
+                setStarredBoards((response.data.boards || []).filter(b => b.favorite));
+            } catch (error) {
+                setBoards([]);
+                setRecentBoards([]);
+                setStarredBoards([]);
+            }
+        };
+        fetchBoards();
+    }, []);
 
     const handleAddColumn = () => {
         if (!newColumnName.trim()) return;
@@ -45,60 +71,68 @@ const KanbanBoard = () => {
     };
 
     return (
-        <div style={{ padding: 32, background: '#f4f5f7', minHeight: '100vh' }}>
-            <h3 className="mb-4" style={{ fontWeight: 700, color: '#344563' }}>
-                {loading ? 'Cargando...' : boardName}
-            </h3>
-            <Row className="flex-nowrap" style={{ overflowX: 'auto' }}>
-                {columns.map(col => (
-                    <Col key={col.id} style={{ minWidth: 300, maxWidth: 340 }}>
-                        <Card className="mb-3 shadow-sm" style={{ background: '#f8fafc', borderRadius: 16 }}>
-                            <Card.Body>
-                                <Card.Title style={{ fontWeight: 600, color: '#253858' }}>{col.name}</Card.Title>
-                                <div style={{ minHeight: 60 }}>
-                                    {col.tasks.length === 0 && (
-                                        <div className="text-muted fst-italic">Sin tareas</div>
-                                    )}
-                                    {col.tasks.map((task, idx) => (
-                                        <Card key={idx} className="mb-2" style={{ borderLeft: '4px solid #0d6efd', borderRadius: 8 }}>
-                                            <Card.Body style={{ padding: 10, fontSize: 15 }}>
-                                                {task}
-                                            </Card.Body>
-                                        </Card>
-                                    ))}
-                                </div>
+        <>
+            <WorkspaceNavbar
+                boardName={boardName}
+                loading={loading}
+                boards={boards}
+                recentBoards={recentBoards}
+                starredBoards={starredBoards}
+                ownerName={ownerName}
+                onBoardSelect={id => window.location.href = `/boards/${id}`}
+            />
+            <div style={{ padding: 32, background: '#f4f5f7', minHeight: '100vh' }}>
+                <Row className="flex-nowrap" style={{ overflowX: 'auto' }}>
+                    {columns.map(col => (
+                        <Col key={col.id} style={{ minWidth: 300, maxWidth: 340 }}>
+                            <Card className="mb-3 shadow-sm" style={{ background: '#f8fafc', borderRadius: 16 }}>
+                                <Card.Body>
+                                    <Card.Title style={{ fontWeight: 600, color: '#253858' }}>{col.name}</Card.Title>
+                                    <div style={{ minHeight: 60 }}>
+                                        {col.tasks.length === 0 && (
+                                            <div className="text-muted fst-italic">Sin tareas</div>
+                                        )}
+                                        {col.tasks.map((task, idx) => (
+                                            <Card key={idx} className="mb-2" style={{ borderLeft: '4px solid #0d6efd', borderRadius: 8 }}>
+                                                <Card.Body style={{ padding: 10, fontSize: 15 }}>
+                                                    {task}
+                                                </Card.Body>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                    ))}
+                    <Col style={{ minWidth: 300, maxWidth: 340 }}>
+                        <Card className="mb-3 shadow-sm" style={{ background: '#e9ecef', borderRadius: 16, height: '100%' }}>
+                            <Card.Body className="d-flex flex-column justify-content-center align-items-center">
+                                <Form
+                                    onSubmit={e => {
+                                        e.preventDefault();
+                                        handleAddColumn();
+                                    }}
+                                    className="w-100"
+                                >
+                                    <Form.Label className="mb-2" style={{ fontWeight: 500, color: '#253858' }}>Agregar columna</Form.Label>
+                                    <InputGroup>
+                                        <Form.Control
+                                            type="text"
+                                            placeholder="Nombre de la columna"
+                                            value={newColumnName}
+                                            onChange={e => setNewColumnName(e.target.value)}
+                                        />
+                                        <Button variant="primary" type="submit">
+                                            +
+                                        </Button>
+                                    </InputGroup>
+                                </Form>
                             </Card.Body>
                         </Card>
                     </Col>
-                ))}
-                <Col style={{ minWidth: 300, maxWidth: 340 }}>
-                    <Card className="mb-3 shadow-sm" style={{ background: '#e9ecef', borderRadius: 16, height: '100%' }}>
-                        <Card.Body className="d-flex flex-column justify-content-center align-items-center">
-                            <Form
-                                onSubmit={e => {
-                                    e.preventDefault();
-                                    handleAddColumn();
-                                }}
-                                className="w-100"
-                            >
-                                <Form.Label className="mb-2" style={{ fontWeight: 500, color: '#253858' }}>Agregar columna</Form.Label>
-                                <InputGroup>
-                                    <Form.Control
-                                        type="text"
-                                        placeholder="Nombre de la columna"
-                                        value={newColumnName}
-                                        onChange={e => setNewColumnName(e.target.value)}
-                                    />
-                                    <Button variant="primary" type="submit">
-                                        +
-                                    </Button>
-                                </InputGroup>
-                            </Form>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
-        </div>
+                </Row>
+            </div>
+        </>
     );
 };
 

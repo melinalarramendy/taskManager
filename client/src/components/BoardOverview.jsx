@@ -139,16 +139,22 @@ const BoardOverview = ({
                       variant="outline-warning"
                       size="sm"
                       title={board.favorite ? "Quitar de destacados" : "Marcar como destacado"}
-                      onClick={() => onToggleFavorite(board._id, !board.favorite)}
+                      onClick={e => {
+                        e.stopPropagation();
+                        onToggleFavorite(board._id, !board.favorite);
+                      }}
                       style={{ color: board.favorite ? '#FFD700' : '#bbb' }}
                     >
-                      {board.favorite ? <FaStar /> : <FaStar />}
+                      <FaStar />
                     </Button>
                     <Button
                       variant="outline-primary"
                       size="sm"
                       title="Editar"
-                      onClick={() => onEditBoard(board)}
+                      onClick={e => {
+                        e.stopPropagation();
+                        onEditBoard(board);
+                      }}
                     >
                       <FiEdit2 />
                     </Button>
@@ -156,7 +162,10 @@ const BoardOverview = ({
                       variant="outline-danger"
                       size="sm"
                       title="Eliminar"
-                      onClick={() => onDeleteBoard(board._id)}
+                      onClick={e => {
+                        e.stopPropagation();
+                        onDeleteBoard(board._id);
+                      }}
                     >
                       <FiTrash2 />
                     </Button>
