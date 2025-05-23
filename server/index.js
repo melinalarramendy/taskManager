@@ -64,6 +64,12 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+const initialLists = [
+  { id: 1, title: 'Por hacer', tasks: [] },
+  { id: 2, title: 'En progreso', tasks: [] },
+  { id: 3, title: 'Hecho', tasks: [] }
+];
+
 
 app.post('/register', async (req, res) => {
   try {
@@ -338,12 +344,26 @@ app.get('/workspaces/boards', authenticateToken, async (req, res) => {
 app.get('/boards/:id', authenticateToken, async (req, res) => {
   try {
     const board = await Board.findById(req.params.id);
-    if (!board) {
-      return res.status(404).json({ message: 'Tablero no encontrado' });
-    }
-    res.status(200).json(board);
+    if (!board) return res.status(404).json({ message: 'Board not found' });
+    res.json(board);
   } catch (error) {
-    res.status(500).json({ message: 'Error al obtener el tablero' });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.put('/boards/:id/lists', async (req, res) => {
+  try {
+    const { lists } = req.body;
+    const board = await Board.findByIdAndUpdate(
+      req.params.id,
+      { lists },
+      { new: true }
+    );
+    res.json(board);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -371,6 +391,7 @@ app.post('/boards', authenticateToken, async (req, res) => {
       workspace: user.defaultWorkspace,
       createdBy: user._id,
       owner: user._id,
+      lists: initialLists,
       favorite: false
     });
 
