@@ -163,6 +163,23 @@ const Dashboard = () => {
     }
   };
 
+  const handleEditColumn = (colId, title) => {
+    setEditingColumnId(colId);
+    setEditingColumnTitle(title);
+  };
+
+  const handleEditColumnSave = (colId) => {
+    const newLists = lists.map(list =>
+      (list.id || list._id) === colId
+        ? { ...list, title: editingColumnTitle }
+        : list
+    );
+    setLists(newLists);
+    setEditingColumnId(null);
+    setEditingColumnTitle('');
+    saveLists(newLists);
+  };
+
   function resizeImage(file, maxWidth = 800, maxHeight = 600) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -206,7 +223,7 @@ const Dashboard = () => {
         const workspaceData = response.data?.workspace || {};
 
         setBoards(boardsData);
-        setRecentBoards(boardsData.slice(0, 2));
+        setRecentBoards(boardsData.filter(b => b.title).slice(-5).reverse());
 
         setActiveWorkspace(workspaceData.id || null);
 
@@ -235,7 +252,7 @@ const Dashboard = () => {
 
         const boardsData = response.data?.boards || [];
         setBoards(boardsData);
-        setRecentBoards(boardsData.slice(0, 2));
+        setRecentBoards(boardsData.filter(b => b.title).slice(-5).reverse());
 
       } catch (error) {
         console.error('Error fetching boards:', error);

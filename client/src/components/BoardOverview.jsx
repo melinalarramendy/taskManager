@@ -235,15 +235,36 @@ const BoardOverview = ({
           </Modal.Footer>
         </Modal>
 
-        {/* Tableros recientes */}
         <div className="mt-4">
           <h5>Visitados recientemente</h5>
           {recentBoards.length > 0 ? (
             <div className="d-flex flex-wrap gap-3">
-              {recentBoards.map(board => (
-                <Card key={board._id} className="mb-2" style={{ minWidth: '200px' }}>
-                  <Card.Body>
-                    <Card.Title>{board.name}</Card.Title>
+              {recentBoards.slice(0, 5).map(board => (
+                <Card
+                  key={board._id}
+                  className="mb-2"
+                  style={{
+                    minWidth: '200px',
+                    background: board.coverImage
+                      ? `url(${board.coverImage}) center/cover no-repeat`
+                      : "#f8fafc",
+                    color: board.coverImage ? "#fff" : undefined,
+                    position: "relative",
+                    cursor: "pointer"
+                  }}
+                  onClick={() => navigate(`/boards/${board._id}`)}
+                >
+                  {board.coverImage && (
+                    <div style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: "rgba(0,0,0,0.25)",
+                      borderRadius: "1rem",
+                      zIndex: 1
+                    }} />
+                  )}
+                  <Card.Body style={{ position: "relative", zIndex: 2 }}>
+                    <Card.Title>{board.title}</Card.Title>
                     <Badge bg="info">{board.status || 'Activo'}</Badge>
                   </Card.Body>
                 </Card>

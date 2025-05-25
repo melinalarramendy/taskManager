@@ -3,3 +3,7 @@
   padding: 0;
   box-sizing: border-box;
 }
+
+#kanban-board .dropdown-toggle::after {
+  display: none !important;
+}
