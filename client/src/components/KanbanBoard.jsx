@@ -29,11 +29,22 @@ const KanbanBoard = () => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [columnToEdit, setColumnToEdit] = useState(null);
     const [editTitle, setEditTitle] = useState('');
+    const [showTaskModal, setShowTaskModal] = useState(false);
+    const [taskToEdit, setTaskToEdit] = useState(null);
+    const [taskDescription, setTaskDescription] = useState('');
+    const [taskTitle, setTaskTitle] = useState('');
 
     const openEditModal = (colId, title) => {
         setColumnToEdit(colId);
         setEditTitle(title);
         setShowEditModal(true);
+    };
+
+    const openTaskModal = (listId, task) => {
+        setTaskToEdit({ listId, task });
+        setTaskTitle(task.title || '');
+        setTaskDescription(task.description || '');
+        setShowTaskModal(true);
     };
 
     useEffect(() => {
@@ -185,6 +196,43 @@ const KanbanBoard = () => {
         saveLists(newLists);
     };
 
+    const handleSaveTaskDescription = () => {
+        const newLists = lists.map(list => {
+            if (list.id !== taskToEdit.listId) return list;
+            return {
+                ...list,
+                tasks: list.tasks.map(t =>
+                    t.id === taskToEdit.task.id
+                        ? { ...t, title: taskTitle, description: taskDescription }
+                        : t
+                )
+            };
+        });
+        setLists(newLists);
+        saveLists(newLists);
+        setShowTaskModal(false);
+        setTaskToEdit(null);
+        setTaskTitle('');
+        setTaskDescription('');
+    };
+
+    const handleDeleteTask = () => {
+        if (!taskToEdit) return;
+        const newLists = lists.map(list => {
+            if (list.id !== taskToEdit.listId) return list;
+            return {
+                ...list,
+                tasks: list.tasks.filter(t => t.id !== taskToEdit.task.id)
+            };
+        });
+        setLists(newLists);
+        saveLists(newLists);
+        setShowTaskModal(false);
+        setTaskToEdit(null);
+        setTaskTitle('');
+        setTaskDescription('');
+    };
+
     return (
         <>
             <WorkspaceNavbar
@@ -254,11 +302,13 @@ const KanbanBoard = () => {
                                         </Dropdown>
                                     </div>
                                     <div style={{ minHeight: 60 }}>
-                                        {list.tasks.length === 0 && (
-                                            <div className="text-muted fst-italic mb-2">Sin tareas</div>
-                                        )}
                                         {list.tasks.map((task) => (
-                                            <Card key={task.id} className="mb-2" style={{ borderLeft: '4px solid #0d6efd', borderRadius: 8 }}>
+                                            <Card
+                                                key={task.id}
+                                                className="mb-2"
+                                                style={{ borderLeft: '4px solid #0d6efd', borderRadius: 8, cursor: 'pointer' }}
+                                                onClick={() => openTaskModal(list.id, task)}
+                                            >
                                                 <Card.Body style={{ padding: 10, fontSize: 15 }}>
                                                     {task.title}
                                                 </Card.Body>
@@ -334,6 +384,43 @@ const KanbanBoard = () => {
                         Cancelar
                     </Button>
                     <Button variant="primary" onClick={handleEditColumnModalSave}>
+                        Guardar
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            <Modal show={showTaskModal} onHide={() => setShowTaskModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Editar tarea</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form.Group>
+                        <Form.Label>Título</Form.Label>
+                        <Form.Control
+                            type="text"
+                            value={taskTitle}
+                            onChange={e => setTaskTitle(e.target.value)}
+                            autoFocus
+                        />
+                    </Form.Group>
+                    <Form.Group className="mt-3">
+                        <Form.Label>Descripción</Form.Label>
+                        <Form.Control
+                            as="textarea"
+                            rows={4}
+                            value={taskDescription}
+                            onChange={e => setTaskDescription(e.target.value)}
+                        />
+                    </Form.Group>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="danger" onClick={handleDeleteTask}>
+                        Eliminar tarea
+                    </Button>
+                    <Button variant="secondary" onClick={() => setShowTaskModal(false)}>
+                        Cancelar
+                    </Button>
+                    <Button variant="primary" onClick={handleSaveTaskDescription}>
                         Guardar
                     </Button>
                 </Modal.Footer>
