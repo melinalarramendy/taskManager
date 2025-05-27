@@ -4,6 +4,15 @@ import { Modal } from 'react-bootstrap';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import WorkspaceNavbar from './WorkspaceNavbar';
+import Swal from 'sweetalert2';
+
+const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true
+});
 
 const generateId = () => Date.now().toString() + Math.random().toString(36).substring(2, 9);
 
@@ -73,6 +82,11 @@ const KanbanBoard = () => {
                 setLists(listsWithTaskIds);
             } catch (error) {
                 setBoardName('Tablero no encontrado');
+                Toast.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudo cargar el tablero.'
+                });
             } finally {
                 setLoading(false);
             }
@@ -96,6 +110,11 @@ const KanbanBoard = () => {
                 setBoards([]);
                 setRecentBoards([]);
                 setStarredBoards([]);
+                Toast.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudieron cargar los tableros.'
+                });
             }
         };
         fetchBoards();
@@ -115,7 +134,11 @@ const KanbanBoard = () => {
                 }
             });
         } catch (error) {
-            alert('Error al guardar los cambios. Intenta nuevamente.');
+            Toast.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error al guardar los cambios. Intenta nuevamente.'
+            });
             console.error('Error al guardar listas:', error);
         }
     };
@@ -146,7 +169,6 @@ const KanbanBoard = () => {
     };
 
     const handleEditColumn = (colId, title) => {
-        console.log('Editando columna:', colId, title);
         setEditingColumnId(String(colId));
         setEditingColumnTitle(title);
     };
@@ -188,12 +210,22 @@ const KanbanBoard = () => {
         const newLists = [...lists, copy];
         setLists(newLists);
         saveLists(newLists);
+        Toast.fire({
+            icon: 'success',
+            title: 'Columna copiada',
+            text: 'La columna fue copiada correctamente.'
+        });
     };
 
     const handleDeleteColumn = (colId) => {
         const newLists = lists.filter(list => String(list.id) !== String(colId));
         setLists(newLists);
         saveLists(newLists);
+        Toast.fire({
+            icon: 'success',
+            title: 'Columna eliminada',
+            text: 'La columna fue eliminada correctamente.'
+        });
     };
 
     const handleSaveTaskDescription = () => {
@@ -214,6 +246,11 @@ const KanbanBoard = () => {
         setTaskToEdit(null);
         setTaskTitle('');
         setTaskDescription('');
+        Toast.fire({
+            icon: 'success',
+            title: 'Tarea actualizada',
+            text: 'La tarea fue actualizada correctamente.'
+        });
     };
 
     const handleDeleteTask = () => {
@@ -231,6 +268,11 @@ const KanbanBoard = () => {
         setTaskToEdit(null);
         setTaskTitle('');
         setTaskDescription('');
+        Toast.fire({
+            icon: 'success',
+            title: 'Tarea eliminada',
+            text: 'La tarea fue eliminada correctamente.'
+        });
     };
 
     return (

@@ -5,6 +5,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FiUserPlus } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 
+const Toast = Swal.mixin({
+  toast: true,
+  position: 'top-end',
+  showConfirmButton: false,
+  timer: 1800,
+  timerProgressBar: true
+});
+
 const Signup = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -54,11 +62,10 @@ const Signup = () => {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
-      Swal.fire({
+      Toast.fire({
         icon: 'error',
         title: 'Validación',
-        text: Object.values(newErrors).join('\n'),
-        confirmButtonColor: '#3085d6'
+        text: Object.values(newErrors).join('\n')
       });
       return false;
     }
@@ -85,16 +92,15 @@ const Signup = () => {
       if (response.data && response.data.token) {
         localStorage.setItem('token', response.data.token);
 
-        await Swal.fire({
+        Toast.fire({
           icon: 'success',
           title: '¡Registro exitoso!',
-          text: 'Tu cuenta ha sido creada correctamente.',
-          confirmButtonColor: '#3085d6',
-          timer: 1800,
-          showConfirmButton: false
+          text: 'Tu cuenta ha sido creada correctamente.'
         });
 
-        navigate('/login');
+        setTimeout(() => {
+          navigate('/login');
+        }, 1200);
       } else {
         throw new Error('Respuesta inesperada del servidor');
       }
@@ -114,11 +120,10 @@ const Signup = () => {
         errorMessage = err.message;
       }
 
-      Swal.fire({
+      Toast.fire({
         icon: 'error',
         title: 'Error',
-        text: errorMessage,
-        confirmButtonColor: '#d33'
+        text: errorMessage
       });
     } finally {
       setIsSubmitting(false);

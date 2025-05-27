@@ -2,20 +2,27 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
+const Toast = Swal.mixin({
+  toast: true,
+  position: 'top-end',
+  showConfirmButton: false,
+  timer: 1500,
+  timerProgressBar: true
+});
+
 export const useLogout = () => {
   const navigate = useNavigate();
 
   const logout = async () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    await Swal.fire({
-      title: 'Sesión cerrada',
-      text: 'Has cerrado sesión correctamente.',
-      confirmButtonColor: '#3085d6',
-      timer: 1500,
-      showConfirmButton: false
+    Toast.fire({
+      icon: 'success',
+      title: 'Has cerrado sesión correctamente.'
     });
-    navigate('/login', { replace: true });
+    setTimeout(() => {
+      navigate('/login', { replace: true });
+    }, 1500);
   };
 
   return logout;

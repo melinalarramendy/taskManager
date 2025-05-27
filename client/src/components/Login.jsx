@@ -5,6 +5,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { FiLogIn } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 
+const Toast = Swal.mixin({
+  toast: true,
+  position: 'top-end',
+  showConfirmButton: false,
+  timer: 1800,
+  timerProgressBar: true
+});
+
 const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
@@ -43,11 +51,10 @@ const Login = () => {
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) {
-      Swal.fire({
+      Toast.fire({
         icon: 'error',
         title: 'Validación',
-        text: Object.values(newErrors).join('\n'),
-        confirmButtonColor: '#3085d6'
+        text: Object.values(newErrors).join('\n')
       });
       return false;
     }
@@ -83,16 +90,15 @@ const Login = () => {
 
       axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
 
-      await Swal.fire({
+      Toast.fire({
         icon: 'success',
         title: '¡Bienvenido!',
-        text: 'Inicio de sesión exitoso',
-        confirmButtonColor: '#3085d6',
-        timer: 1500,
-        showConfirmButton: false
+        text: 'Inicio de sesión exitoso'
       });
 
-      navigate('/dashboard', { replace: true });
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 1200);
 
     } catch (err) {
       let errorMessage = 'Error al iniciar sesión';
@@ -106,15 +112,13 @@ const Login = () => {
           errorMessage = err.response.data.message;
         }
       } else if (err.message) {
-
         errorMessage = err.message;
       }
 
-      Swal.fire({
+      Toast.fire({
         icon: 'error',
         title: 'Error',
-        text: errorMessage,
-        confirmButtonColor: '#d33'
+        text: errorMessage
       });
       
       localStorage.removeItem('token');
