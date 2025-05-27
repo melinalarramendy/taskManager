@@ -6,6 +6,7 @@ const nodemailer = require('nodemailer');
 const User = require('./models/User');
 const Board = require('./models/Board');
 const Workspace = require('./models/Workspace');
+const Notification = require('./models/Notification');
 
 
 const jwt = require('jsonwebtoken');
@@ -491,6 +492,32 @@ app.delete('/boards/:id', authenticateToken, async (req, res) => {
   }
 });
 
+app.get('/notifications', authenticateToken, async (req, res) => {
+  const notifications = await Notification.find({ email: req.user.email }).sort({ createdAt: -1 });
+  res.json(notifications);
+});
+
+app.post('/notifications', authenticateToken, async (req, res) => {
+  try {
+    const { title, message, link, read, createdAt } = req.body;
+    const notification = await Notification.create({
+      email: req.user.email, 
+      title,
+      message,
+      link,
+      read: read ?? false,
+      createdAt: createdAt ?? Date.now()
+    });
+    res.json(notification);
+  } catch (error) {
+    res.status(500).json({ message: 'Error creando notificación personalizada' });
+  }
+});
+
+app.put('/notifications/:id/read', authenticateToken, async (req, res) => {
+  await Notification.findByIdAndUpdate(req.params.id, { read: true });
+  res.json({ success: true });
+});
 
 app.listen(3003, () => {
   console.log('Server is running on port 3003');
