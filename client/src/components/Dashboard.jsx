@@ -47,6 +47,14 @@ const Dashboard = () => {
 
   const closeEditModal = () => setEditModalOpen(false);
 
+  const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true
+  });
+
   const handleCreateNewBoard = async (title, description, coverImage) => {
     try {
 
@@ -67,11 +75,19 @@ const Dashboard = () => {
         setBoards(prev => [response.data.board, ...prev]);
         setRecentBoards(prev => [response.data.board, ...prev.slice(0, 1)]);
         closeModal();
-        await Swal.fire('¡Tablero creado!', 'El tablero se creó correctamente.', 'success');
+        Toast.fire({
+          icon: 'success',
+          title: '¡Tablero creado!',
+          text: 'El tablero se creó correctamente.'
+        });
       }
     } catch (error) {
       console.error('Error completo:', error);
-      await Swal.fire('Error', error.response?.data?.message || 'No se pudo crear el tablero. Inténtalo de nuevo.', 'error');
+      Toast.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.response?.data?.message || 'No se pudo crear el tablero. Inténtalo de nuevo.'
+      });
     }
   };
 
@@ -98,15 +114,22 @@ const Dashboard = () => {
         }
       });
       setBoards(prev => prev.filter(board => board._id !== id));
-      Swal.fire('Eliminado', 'El tablero ha sido eliminado.', 'success');
+      Toast.fire({
+        icon: 'success',
+        title: 'Eliminado',
+        text: 'El tablero ha sido eliminado.'
+      });
     } catch (error) {
-      Swal.fire('Error', 'Error al eliminar el tablero', 'error');
+      Toast.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error al eliminar el tablero'
+      });
     }
   };
 
   const handleEditBoard = async () => {
     try {
-
       const response = await axios.put(`/api/boards/${editBoardId}`, {
         title: editBoardTitle,
         description: editBoardDescription,
@@ -133,9 +156,17 @@ const Dashboard = () => {
         )
       );
       closeEditModal();
-      await Swal.fire('¡Editado!', 'El tablero fue actualizado.', 'success');
+      Toast.fire({
+        icon: 'success',
+        title: '¡Editado!',
+        text: 'El tablero fue actualizado.'
+      });
     } catch (error) {
-      await Swal.fire('Error', 'No se pudo editar el tablero.', 'error');
+      Toast.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No se pudo editar el tablero.'
+      });
     }
   };
 
@@ -147,18 +178,17 @@ const Dashboard = () => {
       setBoards(prev =>
         prev.map(b => b._id === boardId ? { ...b, favorite: newValue } : b)
       );
-      await Swal.fire({
+      Toast.fire({
         icon: 'success',
         title: newValue ? 'Agregado a destacados' : 'Quitado de destacados',
-        showConfirmButton: false,
+        text: '',
         timer: 1200
       });
     } catch (error) {
-      await Swal.fire({
+      Toast.fire({
         icon: 'error',
         title: 'Error',
-        text: 'No se pudo actualizar el favorito',
-        confirmButtonColor: '#d33'
+        text: 'No se pudo actualizar el favorito'
       });
     }
   };
@@ -229,7 +259,11 @@ const Dashboard = () => {
 
       } catch (error) {
         console.error('Error fetching boards:', error);
-        Swal.fire('Error', 'Error al cargar el tablero', 'error');
+        Toast.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al cargar el tablero'
+        });
       } finally {
         setLoading(false);
       }
@@ -256,7 +290,11 @@ const Dashboard = () => {
 
       } catch (error) {
         console.error('Error fetching boards:', error);
-        Swal.fire('Error', 'Error al cargar el tablero', 'error');
+        Toast.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al cargar el tablero'
+        });
       } finally {
         setLoading(false);
       }

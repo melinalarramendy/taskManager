@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Navbar, Nav, Button, Modal, ListGroup, Form, InputGroup, Dropdown } from 'react-bootstrap';
-import { FiUser } from 'react-icons/fi';
+import { FiUser, FiSearch, FiBell } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { useLogout } from './Logout';
 
@@ -27,7 +27,7 @@ const WorkspaceNavbar = ({
 
   return (
 
-    <>
+     <>
       <Navbar
         bg="light"
         expand="lg"
@@ -50,13 +50,26 @@ const WorkspaceNavbar = ({
             <Nav.Link onClick={() => setShowStarred(true)}>Tableros marcados</Nav.Link>
           </Nav>
           <div className="d-flex align-items-center gap-2">
+
             <InputGroup className="my-2 my-lg-0" style={{ maxWidth: 250 }}>
+              <InputGroup.Text>
+                <FiSearch />
+              </InputGroup.Text>
               <Form.Control
                 placeholder="Buscar..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
             </InputGroup>
+
+            <Button
+              variant="light"
+              className="rounded-circle border-0 p-0 d-flex align-items-center justify-content-center"
+              style={{ width: 40, height: 40 }}
+            >
+              <FiBell size={22} />
+            </Button>
+
             <Dropdown align="end">
               <Dropdown.Toggle
                 variant="light"
@@ -80,7 +93,6 @@ const WorkspaceNavbar = ({
         </Navbar.Collapse>
       </Navbar>
 
-      {/* Modal Tableros */}
       <Modal show={showBoards} onHide={() => setShowBoards(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Todos los tableros</Modal.Title>
@@ -103,7 +115,6 @@ const WorkspaceNavbar = ({
         </Modal.Body>
       </Modal>
 
-      {/* Modal Tableros recientes */}
       <Modal show={showRecent} onHide={() => setShowRecent(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Tableros recientes</Modal.Title>
@@ -126,7 +137,6 @@ const WorkspaceNavbar = ({
         </Modal.Body>
       </Modal>
 
-      {/* Modal Tableros marcados */}
       <Modal show={showStarred} onHide={() => setShowStarred(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Tableros marcados</Modal.Title>

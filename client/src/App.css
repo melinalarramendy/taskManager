@@ -4,6 +4,10 @@
   box-sizing: border-box;
 }
 
+.dropdown-toggle::after {
+  display: none !important;
+}
+
 #kanban-board .dropdown-toggle::after {
   display: none !important;
 }
