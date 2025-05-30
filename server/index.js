@@ -699,6 +699,52 @@ app.delete('/friends/:friendEmail', authenticateToken, async (req, res) => {
   }
 });
 
+app.get('/friends/:friendEmail/shared-boards', authenticateToken, async (req, res) => {
+  try {
+    const { friendEmail } = req.params;
+    const userEmail = req.user.email;
+
+    // Find both users
+    const user = await User.findOne({ email: userEmail });
+    const friend = await User.findOne({ email: friendEmail });
+
+    if (!user || !friend) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Find boards where user is owner or member
+    const userBoards = await Board.find({
+      $or: [
+        { owner: user._id },
+        { 'members.user': user._id }
+      ]
+    }).select('_id');
+
+    // Find boards where friend is owner or member
+    const friendBoards = await Board.find({
+      $or: [
+        { owner: friend._id },
+        { 'members.user': friend._id }
+      ]
+    }).select('_id');
+
+    const userBoardIds = userBoards.map(b => b._id.toString());
+    const friendBoardIds = friendBoards.map(b => b._id.toString());
+
+    // Intersection of board IDs
+    const sharedBoardIds = userBoardIds.filter(id => friendBoardIds.includes(id));
+
+    // Fetch shared boards details
+    const sharedBoards = await Board.find({ _id: { $in: sharedBoardIds } })
+      .select('title description coverImage owner members');
+
+    res.json({ sharedBoards });
+  } catch (error) {
+    console.error('Error fetching shared boards:', error);
+    res.status(500).json({ message: 'Error al obtener tableros compartidos' });
+  }
+});
+
 app.listen(3003, () => {
   console.log('Server is running on port 3003');
 })

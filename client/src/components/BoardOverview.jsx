@@ -54,6 +54,7 @@ const BoardOverview = ({
   const [selectedBoard, setSelectedBoard] = useState(null);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextPosition, setContextPosition] = useState({ x: 0, y: 0 });
+  const [sharedBoards, setSharedBoards] = useState([]);
   const contextMenuRef = useRef(null);
 
   const loadFriends = async () => {
@@ -101,6 +102,8 @@ const BoardOverview = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  
 
   const handleSendFriendRequest = async (e) => {
     e.preventDefault();
@@ -461,35 +464,47 @@ const BoardOverview = ({
               ) : friends.length > 0 ? (
                 <ListGroup variant="flush">
                   {friends.map(friend => (
-                    <ListGroup.Item
-                      key={friend._id || friend.email}
-                      className="p-2"
-                      onContextMenu={(e) => handleFriendClick(friend, e)}
-                      onClick={(e) => handleFriendClick(friend, e)}
-                    >
-                      <div className="d-flex align-items-center">
-                        <Image
-                          src={friend.avatar}
-                          roundedCircle
-                          width={40}
-                          height={40}
-                          className="border me-2"
-                          onError={(e) => {
-                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.name || friend.email)}&background=random`;
-                          }}
-                        />
-                        <div className="text-truncate">
-                          <div className="fw-bold small">{friend.name}</div>
-                          <div className="text-muted x-small">
-                            <FiMail className="me-1" />
-                            <span className="text-truncate">{friend.email}</span>
-                          </div>
+                  <ListGroup.Item
+                    key={friend._id || friend.email}
+                    className="p-2"
+                    onContextMenu={(e) => handleFriendClick(friend, e)}
+                    // Remove onClick here to avoid conflict
+                  >
+                    <div className="d-flex align-items-center">
+                      <Image
+                        src={friend.avatar}
+                        roundedCircle
+                        width={40}
+                        height={40}
+                        className="border me-2"
+                        onError={(e) => {
+                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.name || friend.email)}&background=random`;
+                        }}
+                      />
+                      <div className="text-truncate">
+                        <div
+                          className="fw-bold small"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => navigate(`/profile/${encodeURIComponent(friend.email)}`)}
+                        >
+                          {friend.name}
                         </div>
-                        <Badge bg="secondary" className="ms-auto" pill>
-                          {friend.sharedBoards || 0}
-                        </Badge>
+                        <div className="text-muted x-small">
+                          <FiMail className="me-1" />
+                          <span
+                            className="text-truncate"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => navigate(`/profile/${encodeURIComponent(friend.email)}`)}
+                          >
+                            {friend.email}
+                          </span>
+                        </div>
                       </div>
-                    </ListGroup.Item>
+                      <Badge bg="secondary" className="ms-auto" pill>
+                        {friend.sharedBoards || 0}
+                      </Badge>
+                    </div>
+                  </ListGroup.Item>
                   ))}
                 </ListGroup>
               ) : (

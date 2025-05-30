@@ -240,7 +240,13 @@ const Friends = () => {
                           <Card.Title>{friend.name}</Card.Title>
                           <Card.Text className="text-muted">
                             <FiMail className="me-2" />
-                            {friend.email}
+                            <span
+                              style={{ cursor: 'pointer', textDecoration: 'underline', color: 'blue' }}
+                              onClick={() => window.location.href = `/profile/${encodeURIComponent(friend.email)}`}
+                              title="Ver perfil"
+                            >
+                              {friend.email}
+                            </span>
                           </Card.Text>
                           <Badge bg="secondary" className="mb-2">
                             {friend.sharedBoards} tableros compartidos
