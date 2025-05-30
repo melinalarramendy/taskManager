@@ -34,10 +34,22 @@ const UserSchema = new mongoose.Schema({
     }
   }],
   boards: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Board' }],
+  friends: [{
+    type: String, 
+    trim: true,
+    lowercase: true,
+    validate: {
+      validator: function(v) {
+        return /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v);
+      },
+      message: props => `${props.value} no es un email válido!`
+    }
+  }],
   sharedBoards: [{
     board: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Board'
+      ref: 'Board',
+      required: true
     },
     role: {
       type: String,

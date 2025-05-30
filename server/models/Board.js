@@ -48,14 +48,11 @@ const BoardSchema = new mongoose.Schema({
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'El usuario miembro es requerido']
+      required: true
     },
     role: {
       type: String,
-      enum: {
-        values: ['viewer', 'editor', 'admin'],
-        message: 'Rol no válido. Usa viewer, editor o admin'
-      },
+      enum: ['viewer', 'editor', 'admin'],
       default: 'viewer'
     },
     joinedAt: {

@@ -11,3 +11,25 @@
 #kanban-board .dropdown-toggle::after {
   display: none !important;
 }
+
+.context-menu {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-width: 200px;
+}
+
+.context-menu .list-group-item {
+  border-left: 0;
+  border-right: 0;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.context-menu .list-group-item:first-child {
+  border-top: 0;
+}
+
+.context-menu .list-group-item:last-child {
+  border-bottom: 0;
+}

@@ -7,7 +7,7 @@ const User = require('./models/User');
 const Board = require('./models/Board');
 const Workspace = require('./models/Workspace');
 const Notification = require('./models/Notification');
-
+const FriendRequest = require('./models/FriendRequest');
 
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -176,7 +176,7 @@ app.post('/forgot-password', async (req, res) => {
     }
 
     const resetToken = crypto.randomBytes(20).toString('hex');
-    const resetTokenExpiry = Date.now() + 3600000; // 1 hora
+    const resetTokenExpiry = Date.now() + 3600000;
 
     user.resetToken = resetToken;
     user.resetTokenExpiry = resetTokenExpiry;
@@ -492,6 +492,99 @@ app.delete('/boards/:id', authenticateToken, async (req, res) => {
   }
 });
 
+app.post('/boards/share', authenticateToken, async (req, res) => {
+  console.log('Llegó solicitud a /boards/share');
+  try {
+    const { boardId, email, permission } = req.body;
+
+    if (!boardId || !email || !permission) {
+      return res.status(400).json({ message: 'Faltan campos requeridos' });
+    }
+
+    const board = await Board.findOne({
+      _id: boardId,
+      owner: req.user._id
+    });
+    if (!board) {
+      return res.status(404).json({ message: 'Tablero no encontrado o no tienes permisos' });
+    }
+
+    const friend = await User.findOne({ email });
+    if (!friend) {
+      return res.status(404).json({ message: 'Usuario invitado no existe' });
+    }
+
+    const alreadySharedInBoard = board.members.some(m =>
+      m.user.toString() === friend._id.toString()
+    );
+
+    const alreadySharedInUser = friend.sharedBoards.some(sb =>
+      sb.board.toString() === boardId
+    );
+
+    if (alreadySharedInBoard || alreadySharedInUser) {
+      return res.status(400).json({ message: 'El tablero ya está compartido con este usuario' });
+    }
+
+    await Board.findByIdAndUpdate(boardId, {
+      $push: {
+        members: {
+          user: friend._id,
+          role: permission,
+          joinedAt: new Date()
+        }
+      }
+    });
+
+    await User.findByIdAndUpdate(friend._id, {
+      $push: {
+        sharedBoards: {
+          board: boardId,
+          role: permission
+        }
+      }
+    });
+
+    await Notification.create({
+      userId: friend._id,
+      title: 'Invitación a tablero',
+      message: `${req.user.name || req.user.email} te invitó al tablero "${board.title}"`,
+      link: `/boards/${boardId}`,
+      read: false
+    });
+
+    res.json({
+      success: true,
+      message: 'Tablero compartido exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error sharing board:', error);
+    res.status(500).json({
+      message: 'Error al compartir tablero',
+      error: error.message
+    });
+  }
+});
+
+app.get('/boards/shared', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .populate('sharedBoards.board', 'title description coverImage owner members')
+      .populate('sharedBoards.board.owner', 'name email');
+    
+    const sharedBoards = user.sharedBoards.map(item => ({
+      ...item.board.toObject(),
+      permission: item.role,
+      sharedBy: item.board.owner
+    }));
+
+    res.json(sharedBoards);
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener tableros compartidos' });
+  }
+});
+
 app.get('/notifications', authenticateToken, async (req, res) => {
   const notifications = await Notification.find({ email: req.user.email }).sort({ createdAt: -1 });
   res.json(notifications);
@@ -501,7 +594,7 @@ app.post('/notifications', authenticateToken, async (req, res) => {
   try {
     const { title, message, link, read, createdAt } = req.body;
     const notification = await Notification.create({
-      email: req.user.email, 
+      email: req.user.email,
       title,
       message,
       link,
@@ -517,6 +610,102 @@ app.post('/notifications', authenticateToken, async (req, res) => {
 app.put('/notifications/:id/read', authenticateToken, async (req, res) => {
   await Notification.findByIdAndUpdate(req.params.id, { read: true });
   res.json({ success: true });
+});
+
+// Enviar solicitud de amistad
+app.post('/friends/request', authenticateToken, async (req, res) => {
+  const { to } = req.body;
+  if (!to) return res.status(400).json({ message: 'Falta el email del destinatario' });
+
+  const exists = await FriendRequest.findOne({ from: req.user.email, to, status: 'pending' });
+  if (exists) return res.status(400).json({ message: 'Ya enviaste una solicitud a este usuario' });
+
+  const request = await FriendRequest.create({ from: req.user.email, to });
+
+  await Notification.create({
+    email: to,
+    title: 'Nueva solicitud de amistad',
+    message: `${req.user.email} te ha enviado una solicitud de amistad.`,
+    link: '/friends'
+  });
+
+  res.json({ success: true, request });
+});
+
+// Aceptar solicitud de amistad
+app.post('/friends/accept', authenticateToken, async (req, res) => {
+  const { from } = req.body;
+
+  const request = await FriendRequest.findOneAndUpdate(
+    { from, to: req.user.email, status: 'pending' },
+    { status: 'accepted' }
+  );
+
+  if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
+
+  await User.updateOne(
+    { email: req.user.email },
+    { $addToSet: { friends: from } }
+  );
+
+  await User.updateOne(
+    { email: from },
+    { $addToSet: { friends: req.user.email } }
+  );
+
+  await Notification.create({
+    email: from,
+    title: 'Solicitud de amistad aceptada',
+    message: `${req.user.email} aceptó tu solicitud de amistad.`,
+    link: '/friends'
+  });
+
+  res.json({ success: true });
+});
+
+app.get('/friends/requests', authenticateToken, async (req, res) => {
+  const requests = await FriendRequest.find({ to: req.user.email, status: 'pending' });
+  res.json(requests);
+});
+
+// Obtener lista de amigos (solicitudes aceptadas)
+app.get('/friends', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.user.email })
+      .select('friends')
+      .populate({
+        path: 'friends',
+        select: 'name email',
+        options: { strictPopulate: false }
+      });
+
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+    res.json(user.friends || []);
+  } catch (error) {
+    console.error('Error al obtener amigos:', error);
+    res.status(500).json({ message: 'Error al obtener amigos' });
+  }
+});
+
+app.delete('/friends/:friendEmail', authenticateToken, async (req, res) => {
+  try {
+    const { friendEmail } = req.params;
+
+    await User.updateOne(
+      { email: req.user.email },
+      { $pull: { friends: friendEmail } }
+    );
+
+    await User.updateOne(
+      { email: friendEmail },
+      { $pull: { friends: req.user.email } }
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al eliminar amigo' });
+  }
 });
 
 app.listen(3003, () => {
