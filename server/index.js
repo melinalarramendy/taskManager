@@ -493,7 +493,7 @@ app.delete('/boards/:id', authenticateToken, async (req, res) => {
 });
 
 app.post('/boards/share', authenticateToken, async (req, res) => {
-  console.log('Llegó solicitud a /boards/share');
+
   try {
     const { boardId, email, permission } = req.body;
 
@@ -501,10 +501,12 @@ app.post('/boards/share', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Faltan campos requeridos' });
     }
 
+    const ownerId = req.user._id || req.user.id;
     const board = await Board.findOne({
       _id: boardId,
-      owner: req.user._id
+      owner: ownerId
     });
+
     if (!board) {
       return res.status(404).json({ message: 'Tablero no encontrado o no tienes permisos' });
     }
@@ -514,53 +516,42 @@ app.post('/boards/share', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Usuario invitado no existe' });
     }
 
-    const alreadySharedInBoard = board.members.some(m =>
+    const alreadyShared = board.members.some(m =>
       m.user.toString() === friend._id.toString()
     );
 
-    const alreadySharedInUser = friend.sharedBoards.some(sb =>
-      sb.board.toString() === boardId
-    );
-
-    if (alreadySharedInBoard || alreadySharedInUser) {
-      return res.status(400).json({ message: 'El tablero ya está compartido con este usuario' });
+    if (alreadyShared) {
+      return res.status(400).json({ message: 'Ya compartiste este tablero con este usuario' });
     }
 
-    await Board.findByIdAndUpdate(boardId, {
-      $push: {
-        members: {
-          user: friend._id,
-          role: permission,
-          joinedAt: new Date()
-        }
-      }
+    board.members.push({
+      user: friend._id,
+      role: permission,
+      joinedAt: new Date()
     });
+    await board.save();
 
-    await User.findByIdAndUpdate(friend._id, {
-      $push: {
-        sharedBoards: {
-          board: boardId,
-          role: permission
-        }
-      }
+    friend.sharedBoards.push({
+      board: boardId,
+      role: permission
     });
+    await friend.save();
 
     await Notification.create({
-      userId: friend._id,
+      email: friend.email,
       title: 'Invitación a tablero',
       message: `${req.user.name || req.user.email} te invitó al tablero "${board.title}"`,
       link: `/boards/${boardId}`,
       read: false
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Tablero compartido exitosamente'
     });
-
   } catch (error) {
-    console.error('Error sharing board:', error);
-    res.status(500).json({
+    console.error('Error en /boards/share:', error);
+    return res.status(500).json({
       message: 'Error al compartir tablero',
       error: error.message
     });
@@ -572,7 +563,7 @@ app.get('/boards/shared', authenticateToken, async (req, res) => {
     const user = await User.findById(req.user._id)
       .populate('sharedBoards.board', 'title description coverImage owner members')
       .populate('sharedBoards.board.owner', 'name email');
-    
+
     const sharedBoards = user.sharedBoards.map(item => ({
       ...item.board.toObject(),
       permission: item.role,
