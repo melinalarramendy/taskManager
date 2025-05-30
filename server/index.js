@@ -389,6 +389,7 @@ app.post('/boards', authenticateToken, async (req, res) => {
       title: req.body.title || 'Nuevo tablero',
       description: req.body.description || '',
       coverImage: req.body.coverImage || '',
+      color: req.body.color || '',
       workspace: user.defaultWorkspace,
       createdBy: user._id,
       owner: user._id,
@@ -417,6 +418,7 @@ app.post('/boards', authenticateToken, async (req, res) => {
         title: board.title,
         description: board.description,
         coverImage: board.coverImage,
+        color: board.color,
         workspace: user.defaultWorkspace,
         favorite: board.favorite,
       }

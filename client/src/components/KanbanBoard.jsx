@@ -27,6 +27,7 @@ const KanbanBoard = () => {
     const [lists, setLists] = useState(initialLists);
     const [newColumnName, setNewColumnName] = useState('');
     const [boardName, setBoardName] = useState('');
+    const [boardColor, setBoardColor] = useState('#ffffff');
     const [loading, setLoading] = useState(true);
     const [boards, setBoards] = useState([]);
     const [recentBoards, setRecentBoards] = useState([]);
@@ -66,6 +67,7 @@ const KanbanBoard = () => {
                     }
                 });
                 setBoardName(response.data.title);
+                setBoardColor(response.data.color || '#ffffff');
                 const fixedLists = (response.data.lists || initialLists).map(list => ({
                     ...list,
                     id: list.id || list._id || generateId()
@@ -286,126 +288,128 @@ const KanbanBoard = () => {
                 ownerName={ownerName}
                 onBoardSelect={id => window.location.href = `/boards/${id}`}
             />
-            <Row id="kanban-board" className="flex-nowrap ms-2 mt-4" style={{ overflowX: 'auto' }}>
-                {lists.map(list => {
-                    return (
-                        <Col key={list.id} style={{ minWidth: 300, maxWidth: 340 }}>
-                            <Card className="mb-3 shadow-sm" style={{ background: '#f8fafc', borderRadius: 16 }}>
-                                <Card.Body>
-                                    <div className="d-flex align-items-center justify-content-between mb-2">
-                                        {String(editingColumnId).trim() === String(list.id).trim() ? (
-                                            <Form
-                                                onSubmit={e => {
-                                                    e.preventDefault();
-                                                    handleEditColumnSave(list.id);
-                                                }}
-                                                style={{ flex: 1, marginRight: 8 }}
-                                            >
+            <div style={{ backgroundColor: boardColor, minHeight: '100vh', padding: 20 }}>
+                <Row id="kanban-board" className="flex-nowrap ms-2 mt-4" style={{ overflowX: 'auto' }}>
+                    {lists.map(list => {
+                        return (
+                            <Col key={list.id} style={{ minWidth: 300, maxWidth: 340 }}>
+                                <Card className="mb-3 shadow-sm" style={{ background: '#f8fafc', borderRadius: 16 }}>
+                                    <Card.Body>
+                                        <div className="d-flex align-items-center justify-content-between mb-2">
+                                            {String(editingColumnId).trim() === String(list.id).trim() ? (
+                                                <Form
+                                                    onSubmit={e => {
+                                                        e.preventDefault();
+                                                        handleEditColumnSave(list.id);
+                                                    }}
+                                                    style={{ flex: 1, marginRight: 8 }}
+                                                >
+                                                    <Form.Control
+                                                        type="text"
+                                                        value={editingColumnTitle}
+                                                        onChange={e => setEditingColumnTitle(e.target.value)}
+                                                        autoFocus
+                                                        onBlur={() => handleEditColumnSave(list.id)}
+                                                    />
+                                                </Form>
+                                            ) : (
+                                                <Card.Title style={{ fontWeight: 600, color: '#253858', flex: 1, marginBottom: 0 }}>
+                                                    {list.title}
+                                                </Card.Title>
+                                            )}
+                                            <Dropdown align="end">
+                                                <Dropdown.Toggle
+                                                    variant="link"
+                                                    style={{
+                                                        color: "#253858",
+                                                        fontSize: 22,
+                                                        textDecoration: "none",
+                                                        boxShadow: "none",
+                                                        padding: 0,
+                                                        marginLeft: 8,
+                                                        lineHeight: 1
+                                                    }}
+                                                    id={`dropdown-${list.id}`}
+                                                >
+                                                    <span style={{ fontSize: 22, fontWeight: 700, verticalAlign: "middle" }}>⋮</span>
+                                                </Dropdown.Toggle>
+                                                <Dropdown.Menu>
+                                                    <Dropdown.Item onClick={() => openEditModal(list.id, list.title)}>
+                                                        Editar nombre
+                                                    </Dropdown.Item>
+                                                    <Dropdown.Item onClick={() => handleCopyColumn(list.id)}>
+                                                        Copiar columna
+                                                    </Dropdown.Item>
+                                                    <Dropdown.Item onClick={() => handleDeleteColumn(list.id)}>
+                                                        Eliminar columna
+                                                    </Dropdown.Item>
+                                                </Dropdown.Menu>
+                                            </Dropdown>
+                                        </div>
+                                        <div style={{ minHeight: 60 }}>
+                                            {list.tasks.map((task) => (
+                                                <Card
+                                                    key={task.id}
+                                                    className="mb-2"
+                                                    style={{ borderLeft: '4px solid #0d6efd', borderRadius: 8, cursor: 'pointer' }}
+                                                    onClick={() => openTaskModal(list.id, task)}
+                                                >
+                                                    <Card.Body style={{ padding: 10, fontSize: 15 }}>
+                                                        {task.title}
+                                                    </Card.Body>
+                                                </Card>
+                                            ))}
+                                            <InputGroup className="mt-2">
                                                 <Form.Control
                                                     type="text"
-                                                    value={editingColumnTitle}
-                                                    onChange={e => setEditingColumnTitle(e.target.value)}
-                                                    autoFocus
-                                                    onBlur={() => handleEditColumnSave(list.id)}
+                                                    placeholder="Agregar tarea"
+                                                    value={taskInputs[list.id] || ''}
+                                                    onChange={e => handleTaskInputChange(list.id, e.target.value)}
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Enter') handleAddTask(list.id);
+                                                    }}
                                                 />
-                                            </Form>
-                                        ) : (
-                                            <Card.Title style={{ fontWeight: 600, color: '#253858', flex: 1, marginBottom: 0 }}>
-                                                {list.title}
-                                            </Card.Title>
-                                        )}
-                                        <Dropdown align="end">
-                                            <Dropdown.Toggle
-                                                variant="link"
-                                                style={{
-                                                    color: "#253858",
-                                                    fontSize: 22,
-                                                    textDecoration: "none",
-                                                    boxShadow: "none",
-                                                    padding: 0,
-                                                    marginLeft: 8,
-                                                    lineHeight: 1
-                                                }}
-                                                id={`dropdown-${list.id}`}
-                                            >
-                                                <span style={{ fontSize: 22, fontWeight: 700, verticalAlign: "middle" }}>⋮</span>
-                                            </Dropdown.Toggle>
-                                            <Dropdown.Menu>
-                                                <Dropdown.Item onClick={() => openEditModal(list.id, list.title)}>
-                                                    Editar nombre
-                                                </Dropdown.Item>
-                                                <Dropdown.Item onClick={() => handleCopyColumn(list.id)}>
-                                                    Copiar columna
-                                                </Dropdown.Item>
-                                                <Dropdown.Item onClick={() => handleDeleteColumn(list.id)}>
-                                                    Eliminar columna
-                                                </Dropdown.Item>
-                                            </Dropdown.Menu>
-                                        </Dropdown>
-                                    </div>
-                                    <div style={{ minHeight: 60 }}>
-                                        {list.tasks.map((task) => (
-                                            <Card
-                                                key={task.id}
-                                                className="mb-2"
-                                                style={{ borderLeft: '4px solid #0d6efd', borderRadius: 8, cursor: 'pointer' }}
-                                                onClick={() => openTaskModal(list.id, task)}
-                                            >
-                                                <Card.Body style={{ padding: 10, fontSize: 15 }}>
-                                                    {task.title}
-                                                </Card.Body>
-                                            </Card>
-                                        ))}
-                                        <InputGroup className="mt-2">
-                                            <Form.Control
-                                                type="text"
-                                                placeholder="Agregar tarea"
-                                                value={taskInputs[list.id] || ''}
-                                                onChange={e => handleTaskInputChange(list.id, e.target.value)}
-                                                onKeyDown={e => {
-                                                    if (e.key === 'Enter') handleAddTask(list.id);
-                                                }}
-                                            />
-                                            <Button
-                                                variant="primary"
-                                                onClick={() => handleAddTask(list.id)}
-                                            >
-                                                +
-                                            </Button>
-                                        </InputGroup>
-                                    </div>
-                                </Card.Body>
-                            </Card>
-                        </Col>
-                    );
-                })}
-                <Col style={{ minWidth: 300, maxWidth: 340 }}>
-                    <Card className="mb-3 shadow-sm" style={{ background: '#e9ecef', borderRadius: 16, height: '100%' }}>
-                        <Card.Body className="d-flex flex-column justify-content-center align-items-center">
-                            <Form
-                                onSubmit={e => {
-                                    e.preventDefault();
-                                    handleAddColumn();
-                                }}
-                                className="w-100"
-                            >
-                                <Form.Label className="mb-2" style={{ fontWeight: 500, color: '#253858' }}>Agregar columna</Form.Label>
-                                <InputGroup>
-                                    <Form.Control
-                                        type="text"
-                                        placeholder="Nombre de la columna"
-                                        value={newColumnName}
-                                        onChange={e => setNewColumnName(e.target.value)}
-                                    />
-                                    <Button variant="primary" type="submit">
-                                        +
-                                    </Button>
-                                </InputGroup>
-                            </Form>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
+                                                <Button
+                                                    variant="primary"
+                                                    onClick={() => handleAddTask(list.id)}
+                                                >
+                                                    +
+                                                </Button>
+                                            </InputGroup>
+                                        </div>
+                                    </Card.Body>
+                                </Card>
+                            </Col>
+                        );
+                    })}
+                    <Col style={{ minWidth: 300, maxWidth: 340 }}>
+                        <Card className="mb-3 shadow-sm" style={{ background: '#e9ecef', borderRadius: 16, height: '100%' }}>
+                            <Card.Body className="d-flex flex-column justify-content-center align-items-center">
+                                <Form
+                                    onSubmit={e => {
+                                        e.preventDefault();
+                                        handleAddColumn();
+                                    }}
+                                    className="w-100"
+                                >
+                                    <Form.Label className="mb-2" style={{ fontWeight: 500, color: '#253858' }}>Agregar columna</Form.Label>
+                                    <InputGroup>
+                                        <Form.Control
+                                            type="text"
+                                            placeholder="Nombre de la columna"
+                                            value={newColumnName}
+                                            onChange={e => setNewColumnName(e.target.value)}
+                                        />
+                                        <Button variant="primary" type="submit">
+                                            +
+                                        </Button>
+                                    </InputGroup>
+                                </Form>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
+            </div>
             <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Editar nombre de columna</Modal.Title>

@@ -28,6 +28,8 @@ const BoardOverview = ({
   newBoardImage,
   setNewBoardDescription,
   setNewBoardImage,
+  newBoardColor,
+  setNewBoardColor,
   onEditBoard,
   editModalOpen,
   closeEditModal,
@@ -37,6 +39,8 @@ const BoardOverview = ({
   setEditBoardDescription,
   editBoardImage,
   setEditBoardImage,
+  editBoardColor,
+  setEditBoardColor,
   resizeImage,
   onToggleFavorite,
   handleEditBoard
@@ -201,7 +205,7 @@ const BoardOverview = ({
                       style={{
                         background: board.coverImage
                           ? `url(${board.coverImage}) center/cover no-repeat`
-                          : "#f8fafc",
+                          : board.color || "#f8fafc",
                         color: board.coverImage ? "#fff" : undefined,
                         position: "relative",
                         cursor: "pointer"
@@ -294,6 +298,15 @@ const BoardOverview = ({
                     />
                   </Form.Group>
                   <Form.Group>
+                    <Form.Label>Color del tablero</Form.Label>
+                    <Form.Control
+                      type="color"
+                      value={newBoardColor}
+                      onChange={e => setNewBoardColor(e.target.value)}
+                      title="Selecciona un color"
+                    />
+                  </Form.Group>
+                  <Form.Group>
                     <Form.Label>Imagen de fondo</Form.Label>
                     <Form.Control
                       type="file"
@@ -320,7 +333,7 @@ const BoardOverview = ({
                 </Button>
                 <Button
                   variant="primary"
-                  onClick={() => onCreateNewBoard(newBoardTitle, newBoardDescription, newBoardImage)}
+                  onClick={() => onCreateNewBoard(newBoardTitle, newBoardDescription, newBoardImage, newBoardColor)}
                   disabled={!newBoardTitle}
                 >
                   Crear
@@ -348,6 +361,15 @@ const BoardOverview = ({
                       as="textarea"
                       value={editBoardDescription}
                       onChange={e => setEditBoardDescription(e.target.value)}
+                    />
+                  </Form.Group>
+                  <Form.Group>
+                    <Form.Label>Color del tablero</Form.Label>
+                    <Form.Control
+                      type="color"
+                      value={editBoardColor}
+                      onChange={e => setEditBoardColor(e.target.value)}
+                      title="Selecciona un color"
                     />
                   </Form.Group>
                   <Form.Group>
@@ -397,7 +419,7 @@ const BoardOverview = ({
                         minWidth: '200px',
                         background: board.coverImage
                           ? `url(${board.coverImage}) center/cover no-repeat`
-                          : "#f8fafc",
+                          : board.color || "#f8fafc",
                         color: board.coverImage ? "#fff" : undefined,
                         position: "relative",
                         cursor: "pointer"
@@ -468,7 +490,6 @@ const BoardOverview = ({
                     key={friend._id || friend.email}
                     className="p-2"
                     onContextMenu={(e) => handleFriendClick(friend, e)}
-                    // Remove onClick here to avoid conflict
                   >
                     <div className="d-flex align-items-center">
                       <Image
@@ -500,9 +521,6 @@ const BoardOverview = ({
                           </span>
                         </div>
                       </div>
-                      <Badge bg="secondary" className="ms-auto" pill>
-                        {friend.sharedBoards || 0}
-                      </Badge>
                     </div>
                   </ListGroup.Item>
                   ))}

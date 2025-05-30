@@ -61,6 +61,7 @@ const BoardSchema = new mongoose.Schema({
     }
   }],
   coverImage: String,
+  color: String,
   favorite: {
     type: Boolean,
     default: false

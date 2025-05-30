@@ -18,30 +18,36 @@ const Dashboard = () => {
   const [newBoardTitle, setNewBoardTitle] = useState('');
   const [newBoardDescription, setNewBoardDescription] = useState('');
   const [newBoardImage, setNewBoardImage] = useState('');
+  const [newBoardColor, setNewBoardColor] = useState('#ffffff');
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editBoardId, setEditBoardId] = useState(null);
   const [editBoardTitle, setEditBoardTitle] = useState('');
   const [editBoardDescription, setEditBoardDescription] = useState('');
   const [editBoardImage, setEditBoardImage] = useState('');
+  const [editBoardColor, setEditBoardColor] = useState('#ffffff');
 
   const [user, setUser] = useState(null);
 
 
   const navigate = useNavigate();
 
+
   const openModal = () => {
     setNewBoardTitle('');
     setNewBoardDescription('');
+    setNewBoardColor('#ffffff');
     setShowModal(true);
   };
 
   const closeModal = () => setShowModal(false);
+
 
   const openEditModal = (board) => {
     setEditBoardId(board._id);
     setEditBoardTitle(board.title);
     setEditBoardDescription(board.description);
     setEditBoardImage(board.coverImage || '');
+    setEditBoardColor(board.color || '#ffffff');
     setEditModalOpen(true);
   };
 
@@ -55,7 +61,8 @@ const Dashboard = () => {
     timerProgressBar: true
   });
 
-  const handleCreateNewBoard = async (title, description, coverImage) => {
+
+  const handleCreateNewBoard = async (title, description, coverImage, color) => {
     try {
 
       setError(null);
@@ -63,7 +70,8 @@ const Dashboard = () => {
       const response = await axios.post('/api/boards', {
         title,
         description,
-        coverImage
+        coverImage,
+        color
       }, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -128,12 +136,14 @@ const Dashboard = () => {
     }
   };
 
+
   const handleEditBoard = async () => {
     try {
       const response = await axios.put(`/api/boards/${editBoardId}`, {
         title: editBoardTitle,
         description: editBoardDescription,
-        coverImage: editBoardImage
+        coverImage: editBoardImage,
+        color: editBoardColor
       }, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -144,14 +154,14 @@ const Dashboard = () => {
       setBoards(prev =>
         prev.map(board =>
           board._id === editBoardId
-            ? { ...board, title: editBoardTitle, description: editBoardDescription, coverImage: editBoardImage }
+            ? { ...board, title: editBoardTitle, description: editBoardDescription, coverImage: editBoardImage, color: editBoardColor }
             : board
         )
       );
       setRecentBoards(prev =>
         prev.map(board =>
           board._id === editBoardId
-            ? { ...board, title: editBoardTitle, description: editBoardDescription, coverImage: editBoardImage }
+            ? { ...board, title: editBoardTitle, description: editBoardDescription, coverImage: editBoardImage, color: editBoardColor }
             : board
         )
       );
@@ -352,6 +362,8 @@ const Dashboard = () => {
               setNewBoardDescription={setNewBoardDescription}
               newBoardImage={newBoardImage}
               setNewBoardImage={setNewBoardImage}
+              newBoardColor={newBoardColor}
+              setNewBoardColor={setNewBoardColor}
               onEditBoard={openEditModal}
               editModalOpen={editModalOpen}
               closeEditModal={closeEditModal}
@@ -362,6 +374,8 @@ const Dashboard = () => {
               handleEditBoard={handleEditBoard}
               editBoardImage={editBoardImage}
               setEditBoardImage={setEditBoardImage}
+              editBoardColor={editBoardColor}
+              setEditBoardColor={setEditBoardColor}
               onToggleFavorite={handleToggleFavorite}
               resizeImage={resizeImage}
             />
