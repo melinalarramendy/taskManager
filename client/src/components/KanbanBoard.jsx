@@ -43,6 +43,7 @@ const KanbanBoard = () => {
     const [taskToEdit, setTaskToEdit] = useState(null);
     const [taskDescription, setTaskDescription] = useState('');
     const [taskTitle, setTaskTitle] = useState('');
+    const [taskColor, setTaskColor] = useState('#ffffff');
 
     const openEditModal = (colId, title) => {
         setColumnToEdit(colId);
@@ -54,6 +55,7 @@ const KanbanBoard = () => {
         setTaskToEdit({ listId, task });
         setTaskTitle(task.title || '');
         setTaskDescription(task.description || '');
+        setTaskColor(task.color || '#ffffff');
         setShowTaskModal(true);
     };
 
@@ -237,7 +239,12 @@ const KanbanBoard = () => {
                 ...list,
                 tasks: list.tasks.map(t =>
                     t.id === taskToEdit.task.id
-                        ? { ...t, title: taskTitle, description: taskDescription }
+                        ? {
+                            ...t,
+                            title: taskTitle,
+                            description: taskDescription,
+                            color: taskColor
+                        }
                         : t
                 )
             };
@@ -254,7 +261,6 @@ const KanbanBoard = () => {
             text: 'La tarea fue actualizada correctamente.'
         });
     };
-
     const handleDeleteTask = () => {
         if (!taskToEdit) return;
         const newLists = lists.map(list => {
@@ -275,6 +281,24 @@ const KanbanBoard = () => {
             title: 'Tarea eliminada',
             text: 'La tarea fue eliminada correctamente.'
         });
+    };
+
+    const isDarkColor = (color) => {
+        if (['black', 'maroon', 'darkviolet', 'darkblue', 'darkred', 'darkgreen', 'darkslategray', 'darkolivegreen'].includes(color.toLowerCase())) {
+            return true;
+        }
+
+        if (color.startsWith('#')) {
+            const hex = color.replace('#', '');
+            const r = parseInt(hex.length === 3 ? hex.slice(0, 1).repeat(2) : hex.slice(0, 2), 16);
+            const g = parseInt(hex.length === 3 ? hex.slice(1, 2).repeat(2) : hex.slice(2, 4), 16);
+            const b = parseInt(hex.length === 3 ? hex.slice(2, 3).repeat(2) : hex.slice(4, 6), 16);
+
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            return luminance < 0.5;
+        }
+
+        return false;
     };
 
     return (
@@ -351,7 +375,13 @@ const KanbanBoard = () => {
                                                 <Card
                                                     key={task.id}
                                                     className="mb-2"
-                                                    style={{ borderLeft: '4px solid #0d6efd', borderRadius: 8, cursor: 'pointer' }}
+                                                    style={{
+                                                        borderLeft: '4px solid #0d6efd',
+                                                        borderRadius: 8,
+                                                        cursor: 'pointer',
+                                                        backgroundColor: task.color || 'inherit',
+                                                        color: task.color && isDarkColor(task.color) ? '#ffffff' : '#000000'
+                                                    }}
                                                     onClick={() => openTaskModal(list.id, task)}
                                                 >
                                                     <Card.Body style={{ padding: 10, fontSize: 15 }}>
@@ -457,6 +487,47 @@ const KanbanBoard = () => {
                             value={taskDescription}
                             onChange={e => setTaskDescription(e.target.value)}
                         />
+                    </Form.Group>
+                    <Form.Group className="mt-3">
+                        <Form.Label>Color de fondo</Form.Label>
+                        <div className="d-flex align-items-center">
+                            <Form.Control
+                                type="color"
+                                value={taskColor}
+                                onChange={e => setTaskColor(e.target.value)}
+                                style={{ width: 60, height: 40, padding: 5 }}
+                                title="Elige un color"
+                            />
+                            <div
+                                style={{
+                                    width: 30,
+                                    height: 30,
+                                    backgroundColor: taskColor,
+                                    borderRadius: 4,
+                                    marginLeft: 10,
+                                    border: '1px solid #dee2e6'
+                                }}
+                            />
+                            <span className="ms-2">{taskColor}</span>
+                        </div>
+                        <div className="d-flex flex-wrap mt-2">
+                            {['#ffffff', '#ffc9c9', '#ffec99', '#b2f2bb', '#000000', '#495057', '#f03e3e', '#fcc419', '#40c057', '#228be6', '#9775fa', '#e8590c'].map(color => (
+                                <div
+                                    key={color}
+                                    onClick={() => setTaskColor(color)}
+                                    style={{
+                                        width: 25,
+                                        height: 25,
+                                        backgroundColor: color,
+                                        borderRadius: 4,
+                                        margin: 3,
+                                        cursor: 'pointer',
+                                        border: taskColor === color ? '2px solid #0d6efd' : '1px solid #dee2e6'
+                                    }}
+                                    title={color}
+                                />
+                            ))}
+                        </div>
                     </Form.Group>
                 </Modal.Body>
                 <Modal.Footer>

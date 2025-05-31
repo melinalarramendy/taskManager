@@ -25,6 +25,7 @@ const Dashboard = () => {
   const [editBoardDescription, setEditBoardDescription] = useState('');
   const [editBoardImage, setEditBoardImage] = useState('');
   const [editBoardColor, setEditBoardColor] = useState('#ffffff');
+  const [taskColor, setTaskColor] = useState('#ffffff');
 
   const [user, setUser] = useState(null);
 
@@ -36,6 +37,7 @@ const Dashboard = () => {
     setNewBoardTitle('');
     setNewBoardDescription('');
     setNewBoardColor('#ffffff');
+    setTaskColor(task.color || '#ffffff');
     setShowModal(true);
   };
 
@@ -139,7 +141,7 @@ const Dashboard = () => {
 
   const handleEditBoard = async () => {
     try {
-      await axios.put(`/api/boards/${editBoardId}`, {
+      const response = await axios.put(`/api/boards/${editBoardId}`, {
         title: editBoardTitle,
         description: editBoardDescription,
         coverImage: editBoardImage,
@@ -347,7 +349,7 @@ const Dashboard = () => {
         <Row>
           <Col md={12} className="p-3">
             <BoardOverview
-
+            
               boards={boards}
               recentBoards={recentBoards}
               starredBoards={starredBoards}

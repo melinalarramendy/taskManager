@@ -16,7 +16,8 @@ const ListSchema = new mongoose.Schema({
     dueDate: Date,
     completed: Boolean,
     labels: [String],
-    position: Number
+    position: Number,
+    color: String
   }],
   position: Number
 }, { timestamps: true });
