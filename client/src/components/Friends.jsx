@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Button, Form, InputGroup, Badge, Modal, Spinner, Alert, Row, Col, Image } from 'react-bootstrap';
 import { FiUserPlus, FiUserX, FiMail } from 'react-icons/fi';
 import axios from 'axios';
@@ -14,6 +15,7 @@ const Toast = Swal.mixin({
 });
 
 const Friends = () => {
+  const navigate = useNavigate();
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
   const [friendEmail, setFriendEmail] = useState('');
@@ -24,12 +26,41 @@ const Friends = () => {
   });
   const [error, setError] = useState(null);
   const [showRequestsModal, setShowRequestsModal] = useState(false);
+  const [boards, setBoards] = useState([]);
+  const [recentBoards, setRecentBoards] = useState([]);
+  const [starredBoards, setStarredBoards] = useState([]);
+  const [ownerName, setOwnerName] = useState('');
+
+  useEffect(() => {
+    const fetchBoards = async () => {
+      try {
+        const response = await axios.get('/api/workspaces/boards', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        setBoards(response.data.boards || []);
+        setOwnerName(response.data.workspace?.name || '');
+        setRecentBoards((response.data.boards || []).slice(-4).reverse());
+        setStarredBoards((response.data.boards || []).filter(b => b.favorite));
+      } catch (error) {
+        setBoards([]);
+        setRecentBoards([]);
+        setStarredBoards([]);
+      }
+    };
+    fetchBoards();
+  }, []);
+
+  const handleBoardSelect = (boardId) => {
+    navigate(`/boards/${boardId}`);
+  };
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setError(null);
-        
+
         const [friendsRes, requestsRes] = await Promise.all([
           axios.get('http://localhost:3003/friends', {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -41,16 +72,16 @@ const Friends = () => {
 
         const formattedFriends = Array.isArray(friendsRes.data)
           ? friendsRes.data.map(friend => {
-              const email = friend.email || (typeof friend === 'string' ? friend : '');
-              const name = friend.name || (email ? email.split('@')[0] : 'Usuario');
-              return {
-                ...friend,
-                email,
-                name,
-                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
-                sharedBoards: friend.sharedBoards || 0
-              };
-            }).filter(friend => friend.email) // Filtramos amigos sin email
+            const email = friend.email || (typeof friend === 'string' ? friend : '');
+            const name = friend.name || (email ? email.split('@')[0] : 'Usuario');
+            return {
+              ...friend,
+              email,
+              name,
+              avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+              sharedBoards: friend.sharedBoards || 0
+            };
+          }).filter(friend => friend.email)
           : [];
 
         setFriends(formattedFriends);
@@ -156,9 +187,19 @@ const Friends = () => {
     }
   };
 
+  const handleViewProfile = (email) => {
+    navigate(`/profile/${encodeURIComponent(email)}`);
+  };
+
   return (
     <>
-      <WorkspaceNavbar />
+      <WorkspaceNavbar
+        boards={boards}
+        recentBoards={recentBoards}
+        starredBoards={starredBoards}
+        ownerName={ownerName}
+        onBoardSelect={handleBoardSelect}
+      />
       <div className="friends-container m-4">
         <Card className="mb-4">
           <Card.Header className="d-flex justify-content-between align-items-center">
@@ -228,11 +269,11 @@ const Friends = () => {
                     <Col key={friend.email}>
                       <Card className="h-100">
                         <div className="d-flex justify-content-center pt-3">
-                          <Image 
-                            src={friend.avatar} 
-                            roundedCircle 
-                            width={100} 
-                            height={100} 
+                          <Image
+                            src={friend.avatar}
+                            roundedCircle
+                            width={100}
+                            height={100}
                             className="border"
                           />
                         </div>
@@ -242,7 +283,7 @@ const Friends = () => {
                             <FiMail className="me-2" />
                             <span
                               style={{ cursor: 'pointer', textDecoration: 'underline', color: 'blue' }}
-                              onClick={() => window.location.href = `/profile/${encodeURIComponent(friend.email)}`}
+                              onClick={() => handleViewProfile(friend.email)}
                               title="Ver perfil"
                             >
                               {friend.email}

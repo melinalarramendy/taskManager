@@ -1,15 +1,45 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Card, Row, Col, Image, Spinner, Alert, Badge, Button } from 'react-bootstrap';
 import WorkspaceNavbar from './WorkspaceNavbar';
 
 const FriendProfile = () => {
   const { friendEmail } = useParams();
+  const navigate = useNavigate();
+  const [boards, setBoards] = useState([]);
+  const [recentBoards, setRecentBoards] = useState([]);
   const [sharedBoards, setSharedBoards] = useState([]);
+  const [starredBoards, setStarredBoards] = useState([]);
+  const [ownerName, setOwnerName] = useState('');
   const [friendName, setFriendName] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchBoards = async () => {
+      try {
+        const response = await axios.get('/api/workspaces/boards', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        setBoards(response.data.boards || []);
+        setOwnerName(response.data.workspace?.name || '');
+        setRecentBoards((response.data.boards || []).slice(-4).reverse());
+        setStarredBoards((response.data.boards || []).filter(b => b.favorite));
+      } catch (error) {
+        setBoards([]);
+        setRecentBoards([]);
+        setStarredBoards([]);
+      }
+    };
+    fetchBoards();
+  }, []);
+
+  const handleBoardSelect = (boardId) => {
+    navigate(`/boards/${boardId}`);
+  };
 
   useEffect(() => {
     const fetchSharedBoards = async () => {
@@ -38,7 +68,13 @@ const FriendProfile = () => {
 
   return (
     <>
-      <WorkspaceNavbar />
+      <WorkspaceNavbar
+        boards={boards}
+        recentBoards={recentBoards}
+        starredBoards={starredBoards}
+        ownerName={ownerName}
+        onBoardSelect={handleBoardSelect}
+      />
       <div className="container my-4">
         <Row>
           <Col xs={12} md={3} className="border-end pe-md-4 mb-4 mb-md-0">
@@ -55,7 +91,7 @@ const FriendProfile = () => {
             </div>
           </Col>
           <Col xs={12} md={9}>
-            <h4 className="mb-3">Tableros en comun</h4>
+            <h4 className="mb-3">Tableros en común</h4>
             {loading ? (
               <div className="d-flex justify-content-center my-5">
                 <Spinner animation="border" />
