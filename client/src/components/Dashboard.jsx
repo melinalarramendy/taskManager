@@ -139,7 +139,7 @@ const Dashboard = () => {
 
   const handleEditBoard = async () => {
     try {
-      const response = await axios.put(`/api/boards/${editBoardId}`, {
+      await axios.put(`/api/boards/${editBoardId}`, {
         title: editBoardTitle,
         description: editBoardDescription,
         coverImage: editBoardImage,
@@ -347,7 +347,7 @@ const Dashboard = () => {
         <Row>
           <Col md={12} className="p-3">
             <BoardOverview
-            
+
               boards={boards}
               recentBoards={recentBoards}
               starredBoards={starredBoards}

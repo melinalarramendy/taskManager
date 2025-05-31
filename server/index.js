@@ -435,10 +435,10 @@ app.post('/boards', authenticateToken, async (req, res) => {
 
 app.put('/boards/:id', authenticateToken, async (req, res) => {
   try {
-    const { title, description, coverImage } = req.body;
+    const { title, description, coverImage, color } = req.body;
     const board = await Board.findByIdAndUpdate(
       req.params.id,
-      { title, description, coverImage },
+      { title, description, coverImage, color },
       { new: true }
     );
     if (!board) {
